@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    tools:context=".MainActivity">
+    tools:context=".controllers.MainActivity">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
@@ -19,6 +19,7 @@
             app:layout_collapseMode="pin"
             app:title="@string/app_name"/>
 
+        <!-- TODO: add menu_main -->
     </com.google.android.material.appbar.AppBarLayout>
 
     <include layout="@layout/content_scrolling" android:id="@+id/content" />

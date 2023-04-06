@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    tools:context=".MapsActivity">
+    tools:context=".controllers.MapsActivity">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
@@ -19,7 +19,6 @@
             android:background="?attr/colorPrimary"
             app:layout_collapseMode="pin"
             app:title="@string/app_name"/>
-
     </com.google.android.material.appbar.AppBarLayout>
 
     <fragment
