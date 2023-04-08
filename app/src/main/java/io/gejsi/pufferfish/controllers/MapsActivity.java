@@ -28,6 +28,7 @@ import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import io.gejsi.pufferfish.BuildConfig;
 import io.gejsi.pufferfish.R;
 import io.gejsi.pufferfish.databinding.ActivityMapsBinding;
 
@@ -80,7 +81,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             getDeviceLocation();
         });
 
-        Places.initialize(getApplicationContext(), "AIzaSyCzajBnOkFlCytPrFpTFh1Y6dCWXsgHXeM");
+        Places.initialize(getApplicationContext(), BuildConfig.MAPS_API_KEY);
         placesClient = Places.createClient(this);
 
         // Construct a FusedLocationProviderClient.
