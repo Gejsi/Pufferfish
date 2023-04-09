@@ -1,5 +1,6 @@
 package io.gejsi.pufferfish.controllers;
 
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -20,14 +21,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   private ActivityMapsBinding binding;
   private LocationHandler locationHandler;
 
+  // Keys for storing activity state.
+  public static final String KEY_CAMERA_POSITION = "camera_position";
+  public static final String KEY_LOCATION = "location";
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
     // Retrieve location and camera position from saved instance state.
     if (savedInstanceState != null) {
-      locationHandler.setLastKnownLocation(savedInstanceState.getParcelable(LocationHandler.KEY_LOCATION));
-      locationHandler.setCameraPosition(savedInstanceState.getParcelable(LocationHandler.KEY_CAMERA_POSITION));
+      locationHandler.setLastKnownLocation(savedInstanceState.getParcelable(KEY_LOCATION));
+      locationHandler.setCameraPosition(savedInstanceState.getParcelable(KEY_CAMERA_POSITION));
     }
 
     binding = ActivityMapsBinding.inflate(getLayoutInflater());
@@ -44,7 +49,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     if (mapFragment != null) {
       mapFragment.getMapAsync(this);
     }
-
   }
 
   @Override
@@ -59,8 +63,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   @Override
   protected void onSaveInstanceState(@NonNull Bundle outState) {
     if (map != null) {
-      outState.putParcelable(LocationHandler.KEY_CAMERA_POSITION, map.getCameraPosition());
-      outState.putParcelable(LocationHandler.KEY_LOCATION, locationHandler.getLastKnownLocation());
+      outState.putParcelable(KEY_CAMERA_POSITION, map.getCameraPosition());
+      outState.putParcelable(KEY_LOCATION, locationHandler.getLastKnownLocation());
     }
     super.onSaveInstanceState(outState);
   }
@@ -74,5 +78,22 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     map = googleMap;
     locationHandler = new LocationHandler(this, map);
     locationHandler.start();
+  }
+
+  /**
+   * Handles the result of the request for location permissions.
+   */
+  @Override
+  public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    locationHandler.setLocationPermissionGranted(false);
+    // If request is cancelled, the result arrays are empty.
+    if (requestCode == LocationHandler.PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION) {
+      if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        locationHandler.setLocationPermissionGranted(true);
+      }
+    } else {
+      super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+    locationHandler.getDeviceLocation();
   }
 }

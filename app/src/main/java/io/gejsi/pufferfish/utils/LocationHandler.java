@@ -10,7 +10,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -27,7 +26,7 @@ import com.google.android.libraries.places.api.net.PlacesClient;
 import io.gejsi.pufferfish.BuildConfig;
 import io.gejsi.pufferfish.controllers.MapsActivity;
 
-public class LocationHandler implements ActivityCompat.OnRequestPermissionsResultCallback {
+public class LocationHandler {
   private CameraPosition cameraPosition;
 
   public void setCameraPosition(CameraPosition cameraPosition) {
@@ -44,8 +43,13 @@ public class LocationHandler implements ActivityCompat.OnRequestPermissionsResul
   // not granted.
   private final LatLng defaultLocation = new LatLng(44, -11);
   private static final int DEFAULT_ZOOM = 20;
-  private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
+  public static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
+
   private boolean locationPermissionGranted;
+
+  public void setLocationPermissionGranted(boolean locationPermissionGranted) {
+    this.locationPermissionGranted = locationPermissionGranted;
+  }
 
   // The geographical location where the device is currently located. That is, the last-known
   // location retrieved by the Fused Location Provider.
@@ -58,10 +62,6 @@ public class LocationHandler implements ActivityCompat.OnRequestPermissionsResul
   public void setLastKnownLocation(Location lastKnownLocation) {
     this.lastKnownLocation = lastKnownLocation;
   }
-
-  // Keys for storing activity state.
-  public static final String KEY_CAMERA_POSITION = "camera_position";
-  public static final String KEY_LOCATION = "location";
 
   private LocationManager locationManager;
   private LocationListener locationListener;
@@ -87,8 +87,7 @@ public class LocationHandler implements ActivityCompat.OnRequestPermissionsResul
       public void onStatusChanged(String provider, int status, Bundle extras) {
         Log.d(activity.TAG, "Status changed");
         if (status == LocationProvider.OUT_OF_SERVICE) {
-          Toast.makeText(activity, "GPS is disabled", Toast.LENGTH_SHORT).show();
-          activity.finish();
+          handleDisabledProvider();
         }
       }
 
@@ -101,9 +100,7 @@ public class LocationHandler implements ActivityCompat.OnRequestPermissionsResul
       @Override
       public void onProviderDisabled(String provider) {
         Log.d(activity.TAG, "Provider disabled");
-        locationPermissionGranted = false;
-        Toast.makeText(activity, "GPS is disabled", Toast.LENGTH_SHORT).show();
-        activity.finish();
+        handleDisabledProvider();
       }
     };
   }
@@ -143,7 +140,7 @@ public class LocationHandler implements ActivityCompat.OnRequestPermissionsResul
   /**
    * Prompts the user for permission to use the device location.
    */
-  public void getLocationPermission() {
+  private void getLocationPermission() {
     /*
      * Request location permission, so that we can get the location of the
      * device. The result of the permission request is handled by a callback,
@@ -154,8 +151,7 @@ public class LocationHandler implements ActivityCompat.OnRequestPermissionsResul
         locationPermissionGranted = true;
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 1, locationListener);
       } else {
-        Toast.makeText(activity, "GPS is disabled. Enable it to access this page.", Toast.LENGTH_SHORT).show();
-        activity.finish();
+        handleDisabledProvider();
       }
     } else {
       ActivityCompat.requestPermissions(activity, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
@@ -172,24 +168,6 @@ public class LocationHandler implements ActivityCompat.OnRequestPermissionsResul
 
   public void stop() {
     locationManager.removeUpdates(locationListener);
-  }
-
-  /**
-   * Handles the result of the request for location permissions.
-   */
-  @Override
-  public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-    locationPermissionGranted = false;
-    // If request is cancelled, the result arrays are empty.
-    if (requestCode == PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION) {
-      if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-        locationPermissionGranted = true;
-      }
-    } else {
-      activity.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    }
-    updateLocationUI();
-    getDeviceLocation();
   }
 
   /**
@@ -211,5 +189,10 @@ public class LocationHandler implements ActivityCompat.OnRequestPermissionsResul
     } catch (SecurityException e) {
       Log.e("Exception: %s", e.getMessage());
     }
+  }
+
+  private void handleDisabledProvider() {
+    Toast.makeText(activity, "GPS is disabled. Enable it to access this page.", Toast.LENGTH_SHORT).show();
+    activity.finish();
   }
 }
