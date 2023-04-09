@@ -45,6 +45,10 @@ public class LocationHandler {
   private static final int DEFAULT_ZOOM = 20;
   public static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
 
+  public boolean isLocationPermissionGranted() {
+    return locationPermissionGranted;
+  }
+
   private boolean locationPermissionGranted;
 
   public void setLocationPermissionGranted(boolean locationPermissionGranted) {
@@ -141,18 +145,18 @@ public class LocationHandler {
    * Prompts the user for permission to use the device location.
    */
   private void getLocationPermission() {
-    /*
+    if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+      handleDisabledProvider();
+      return;
+    }
+      /*
      * Request location permission, so that we can get the location of the
      * device. The result of the permission request is handled by a callback,
      * onRequestPermissionsResult.
      */
     if (ContextCompat.checkSelfPermission(activity.getApplicationContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-      if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
         locationPermissionGranted = true;
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 1, locationListener);
-      } else {
-        handleDisabledProvider();
-      }
     } else {
       ActivityCompat.requestPermissions(activity, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
     }
@@ -192,7 +196,7 @@ public class LocationHandler {
   }
 
   private void handleDisabledProvider() {
-    Toast.makeText(activity, "GPS is disabled. Enable it to access this page.", Toast.LENGTH_SHORT).show();
+    Toast.makeText(activity, "GPS is disabled. Enable it to access the map.", Toast.LENGTH_SHORT).show();
     activity.finish();
   }
 }

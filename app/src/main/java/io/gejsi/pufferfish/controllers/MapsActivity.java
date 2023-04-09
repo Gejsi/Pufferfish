@@ -2,6 +2,7 @@ package io.gejsi.pufferfish.controllers;
 
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -94,6 +95,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     } else {
       super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
+
+    if (!locationHandler.isLocationPermissionGranted()) {
+      Toast.makeText(this, "Location permission is required for this app to work", Toast.LENGTH_SHORT).show();
+      finish();
+    }
+
     locationHandler.getDeviceLocation();
   }
 }
