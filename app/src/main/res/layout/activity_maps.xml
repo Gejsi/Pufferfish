@@ -19,6 +19,7 @@
             android:background="?attr/colorPrimary"
             app:layout_collapseMode="pin"
             app:title="@string/app_name"/>
+
     </com.google.android.material.appbar.AppBarLayout>
 
     <fragment
