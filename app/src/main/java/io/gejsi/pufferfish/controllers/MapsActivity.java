@@ -1,19 +1,34 @@
 package io.gejsi.pufferfish.controllers;
 
+import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.widget.Toast;
+import android.util.Log;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.appcompat.widget.TooltipCompat;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import io.gejsi.pufferfish.R;
 import io.gejsi.pufferfish.databinding.ActivityMapsBinding;
+import io.gejsi.pufferfish.models.MeasurementType;
+import io.gejsi.pufferfish.utils.AudioHandler;
 import io.gejsi.pufferfish.utils.LocationHandler;
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
@@ -21,6 +36,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   private GoogleMap map;
   private ActivityMapsBinding binding;
   private LocationHandler locationHandler;
+  private AudioHandler audioHandler;
+
+  private MeasurementType measurementType = MeasurementType.Noise;
+
+  public static final int PERMISSIONS_REQUEST_CODE = 1;
+  public static final String[] PERMISSIONS_REQUIRED = {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.RECORD_AUDIO};
 
   // Keys for storing activity state.
   public static final String KEY_CAMERA_POSITION = "camera_position";
@@ -38,12 +59,42 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     binding = ActivityMapsBinding.inflate(getLayoutInflater());
     setContentView(binding.getRoot());
-    FloatingActionButton fab = binding.fab;
 
-    fab.setOnClickListener(view -> {
+    Toolbar toolbar = binding.toolbar;
+    setSupportActionBar(toolbar);
+
+    Spinner measurementSpinner = findViewById(R.id.measurement_spinner);
+    String[] measurementTypes = new String[]{"Acoustic Noise", "WiFi strength", "LTE strength"};
+    ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, measurementTypes);
+    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+    measurementSpinner.setAdapter(adapter);
+
+    measurementSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+      @Override
+      public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        if (position == 0) measurementType = MeasurementType.Noise;
+        else if (position == 1) measurementType = MeasurementType.WiFi;
+        else if (position == 2) measurementType = MeasurementType.LTE;
+      }
+
+      @Override
+      public void onNothingSelected(AdapterView<?> parent) {
+        Log.d(TAG, "Nothing selected");
+      }
+    });
+
+    FloatingActionButton loc = binding.loc;
+    TooltipCompat.setTooltipText(loc, "My location");
+    loc.setOnClickListener(view -> {
       locationHandler.getDeviceLocation();
     });
 
+
+    FloatingActionButton recordBtn = binding.record;
+    TooltipCompat.setTooltipText(recordBtn, "Save measurement");
+    recordBtn.setOnClickListener(view -> {
+      Log.d(TAG, "recorded measurement");
+    });
 
     // Obtain the SupportMapFragment and get notified when the map is ready to be used.
     SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
@@ -78,29 +129,70 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   public void onMapReady(@NonNull GoogleMap googleMap) {
     map = googleMap;
     locationHandler = new LocationHandler(this, map);
-    locationHandler.start();
+    audioHandler = new AudioHandler(this, map);
+    requestPermissions();
+  }
+
+  // Call this method to request permissions
+  private void requestPermissions() {
+    List<String> missingPermissions = new ArrayList<>();
+    for (String permission : PERMISSIONS_REQUIRED) {
+      if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+        missingPermissions.add(permission);
+      }
+    }
+    if (!missingPermissions.isEmpty()) {
+      String[] permissionsToRequest = missingPermissions.toArray(new String[0]);
+      ActivityCompat.requestPermissions(this, permissionsToRequest, PERMISSIONS_REQUEST_CODE);
+    } else {
+      // All required permissions are granted, start the handlers
+      locationHandler.setLocationPermissionGranted(true);
+      locationHandler.start();
+    }
   }
 
   /**
-   * Handles the result of the request for location permissions.
+   * Handles the result of the request for permissions.
    */
   @Override
   public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-    locationHandler.setLocationPermissionGranted(false);
-    // If request is cancelled, the result arrays are empty.
-    if (requestCode == LocationHandler.PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION) {
-      if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+    if (requestCode == PERMISSIONS_REQUEST_CODE) {
+      boolean allPermissionsGranted = true;
+      for (int result : grantResults) {
+        if (result != PackageManager.PERMISSION_GRANTED) {
+          allPermissionsGranted = false;
+          break;
+        }
+      }
+      if (allPermissionsGranted) {
+        // All required permissions are granted, continue with the app
         locationHandler.setLocationPermissionGranted(true);
+        locationHandler.start();
+      } else {
+        // At least one required permission is not granted, show an explanation dialog if
+        // necessary, then request the permissions again
+        boolean showRationale = false;
+        for (String permission : permissions) {
+          if (ActivityCompat.shouldShowRequestPermissionRationale(this, permission)) {
+            showRationale = true;
+            break;
+          }
+        }
+
+        if (showRationale) {
+          new AlertDialog.Builder(this)
+                  .setTitle("Permission Required")
+                  .setMessage("This app requires location and audio recording permissions to work properly.")
+                  .setPositiveButton("OK", (dialog, which) -> requestPermissions())
+                  .setNegativeButton("Cancel", (dialog, which) -> finish())
+                  .setCancelable(false)
+                  .show();
+        } else {
+          requestPermissions();
+        }
       }
     } else {
       super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
-
-    if (!locationHandler.isLocationPermissionGranted()) {
-      Toast.makeText(this, "Location permission is required for this app to work", Toast.LENGTH_SHORT).show();
-      finish();
-    }
-
-    locationHandler.getDeviceLocation();
   }
 }

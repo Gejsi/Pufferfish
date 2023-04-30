@@ -3,9 +3,16 @@
     <PreferenceCategory app:title="@string/messages_header">
 
         <EditTextPreference
-            app:key="signature"
-            app:title="@string/signature_title"
-            app:useSimpleSummaryProvider="true" />
+            app:key="average"
+            app:title="Number of measurements to average"
+            app:useSimpleSummaryProvider="true"
+            app:defaultValue="5" />
+
+        <EditTextPreference
+            app:key="time"
+            app:title="Time interval between measurements (in ms)"
+            app:useSimpleSummaryProvider="true"
+            app:defaultValue="5000" />
 
         <ListPreference
             app:defaultValue="reply"

@@ -24,9 +24,13 @@ public class SettingsActivity extends AppCompatActivity {
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
       setPreferencesFromResource(R.xml.root_preferences, rootKey);
 
-      EditTextPreference signaturePref = findPreference("signature");
-      if (signaturePref != null)
-        signaturePref.setOnBindEditTextListener(editText -> editText.setInputType(InputType.TYPE_CLASS_NUMBER));
+      EditTextPreference averagePref = findPreference("average");
+      if (averagePref != null)
+        averagePref.setOnBindEditTextListener(editText -> editText.setInputType(InputType.TYPE_CLASS_NUMBER));
+
+      EditTextPreference timePref = findPreference("time");
+      if (timePref != null)
+        timePref.setOnBindEditTextListener(editText -> editText.setInputType(InputType.TYPE_CLASS_NUMBER));
     }
   }
 }

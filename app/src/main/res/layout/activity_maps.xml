@@ -18,7 +18,16 @@
             android:layout_height="?attr/actionBarSize"
             android:background="?attr/colorPrimary"
             app:layout_collapseMode="pin"
-            app:title="@string/app_name"/>
+            app:title="@string/app_name">
+
+            <Spinner
+                android:id="@+id/measurement_spinner"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:spinnerMode="dropdown"/>
+
+        </androidx.appcompat.widget.Toolbar>
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -31,7 +40,7 @@
         map:uiCompass="true" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab"
+        android:id="@+id/loc"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
@@ -39,6 +48,18 @@
         app:backgroundTint="@color/gray_400"
         app:fabSize="mini"
         app:layout_anchor="@id/map"
-        app:layout_anchorGravity="bottom|end" />
+        app:layout_anchorGravity="bottom|start"
+        android:contentDescription="Get current location" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/record"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:src="@drawable/ic_record"
+        app:backgroundTint="?attr/colorSecondary"
+        app:layout_anchor="@id/map"
+        app:layout_anchorGravity="bottom|end"
+        android:contentDescription="Record measurement" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
