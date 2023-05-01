@@ -72,9 +72,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     measurementSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
       @Override
       public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-        if (position == 0) measurementType = MeasurementType.Noise;
-        else if (position == 1) measurementType = MeasurementType.WiFi;
-        else if (position == 2) measurementType = MeasurementType.LTE;
+        if (position == 0) {
+          measurementType = MeasurementType.Noise;
+          audioHandler.start();
+        }
+        else if (position == 1) {
+          measurementType = MeasurementType.WiFi;
+          audioHandler.stop();
+        }
+        else if (position == 2) {
+          measurementType = MeasurementType.LTE;
+          audioHandler.stop();
+        }
       }
 
       @Override
@@ -88,7 +97,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     loc.setOnClickListener(view -> {
       locationHandler.getDeviceLocation();
     });
-
 
     FloatingActionButton recordBtn = binding.record;
     TooltipCompat.setTooltipText(recordBtn, "Save measurement");
@@ -107,6 +115,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   protected void onDestroy() {
     super.onDestroy();
     locationHandler.stop();
+    audioHandler.stop();
   }
 
   /**
@@ -146,8 +155,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
       ActivityCompat.requestPermissions(this, permissionsToRequest, PERMISSIONS_REQUEST_CODE);
     } else {
       // All required permissions are granted, start the handlers
-      locationHandler.setLocationPermissionGranted(true);
-      locationHandler.start();
+      startHandlers();
     }
   }
 
@@ -166,8 +174,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
       }
       if (allPermissionsGranted) {
         // All required permissions are granted, continue with the app
-        locationHandler.setLocationPermissionGranted(true);
-        locationHandler.start();
+        startHandlers();
       } else {
         // At least one required permission is not granted, show an explanation dialog if
         // necessary, then request the permissions again
@@ -194,5 +201,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     } else {
       super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
+  }
+
+  private void startHandlers() {
+    locationHandler.setLocationPermissionGranted(true);
+    locationHandler.start();
+    audioHandler.setAudioPermissionGranted(true);
   }
 }

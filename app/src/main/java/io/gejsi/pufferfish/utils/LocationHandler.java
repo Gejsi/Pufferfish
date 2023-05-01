@@ -39,13 +39,8 @@ public class LocationHandler {
   // A default location and default zoom to use when location permission is not granted.
   private final LatLng defaultLocation = new LatLng(44, -11);
   private static final int DEFAULT_ZOOM = 20;
-  public static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
 
   private boolean locationPermissionGranted;
-
-  public boolean getLocationPermissionGranted() {
-    return locationPermissionGranted;
-  }
 
   public void setLocationPermissionGranted(boolean locationPermissionGranted) {
     this.locationPermissionGranted = locationPermissionGranted;
