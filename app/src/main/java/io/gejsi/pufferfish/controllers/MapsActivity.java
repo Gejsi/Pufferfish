@@ -102,6 +102,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     TooltipCompat.setTooltipText(recordBtn, "Save measurement");
     recordBtn.setOnClickListener(view -> {
       Log.d(TAG, "recorded measurement");
+      Log.d(TAG, audioHandler.getData() + "");
     });
 
     // Obtain the SupportMapFragment and get notified when the map is ready to be used.
