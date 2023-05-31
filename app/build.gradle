@@ -41,5 +41,4 @@ dependencies {
     implementation 'androidx.preference:preference:1.2.0'
     implementation 'mil.nga.mgrs:mgrs-android:2.2.2'
     implementation 'mil.nga:mgrs:2.1.2'
-    implementation 'com.google.maps.android:android-maps-utils:2.2.0'
 }
