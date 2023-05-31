@@ -20,6 +20,7 @@ import androidx.core.content.ContextCompat;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.TileOverlayOptions;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
@@ -30,6 +31,9 @@ import io.gejsi.pufferfish.databinding.ActivityMapsBinding;
 import io.gejsi.pufferfish.models.MeasurementType;
 import io.gejsi.pufferfish.utils.AudioHandler;
 import io.gejsi.pufferfish.utils.LocationHandler;
+import mil.nga.mgrs.grid.GridType;
+import mil.nga.mgrs.grid.style.Grids;
+import mil.nga.mgrs.tile.MGRSTileProvider;
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
   public static final String TAG = MapsActivity.class.getSimpleName();
@@ -46,6 +50,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   // Keys for storing activity state.
   public static final String KEY_CAMERA_POSITION = "camera_position";
   public static final String KEY_LOCATION = "location";
+
+  /**
+   * MGRS tile provider
+   */
+  private MGRSTileProvider tileProvider;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -101,8 +110,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     FloatingActionButton recordBtn = binding.record;
     TooltipCompat.setTooltipText(recordBtn, "Save measurement");
     recordBtn.setOnClickListener(view -> {
-      Log.d(TAG, "recorded measurement");
-      Log.d(TAG, audioHandler.getData() + "");
+      double lat = locationHandler.getLastKnownLocation().getLatitude();
+      double lng = locationHandler.getLastKnownLocation().getLongitude();
     });
 
     // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -110,7 +119,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     if (mapFragment != null) {
       mapFragment.getMapAsync(this);
     }
+
+    Grids grids = Grids.create();
+    grids.setLabelMinZoom(GridType.GZD, 3);
+    tileProvider = MGRSTileProvider.create(this, grids);
   }
+
 
   @Override
   protected void onDestroy() {
@@ -140,6 +154,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     map = googleMap;
     locationHandler = new LocationHandler(this, map);
     audioHandler = new AudioHandler(this, map);
+    map.addTileOverlay(new TileOverlayOptions().tileProvider(tileProvider));
     requestPermissions();
   }
 

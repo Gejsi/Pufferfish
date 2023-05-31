@@ -5,13 +5,10 @@ import android.content.SharedPreferences;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
-import android.util.Log;
 
 import androidx.preference.PreferenceManager;
 
 import com.google.android.gms.maps.GoogleMap;
-
-import java.util.Arrays;
 
 import io.gejsi.pufferfish.controllers.MapsActivity;
 
@@ -74,9 +71,7 @@ public class AudioHandler {
         if (rms != 0)
           db = 20 * Math.log10(rms / 20.0f);
 
-        data[n % average] = db;
-        Log.d("AudioHandler", "Decibels: " + db);
-        Log.d("AudioHandler", Arrays.toString(data));
+        data[n % average] = normalizeIntensity(db);
       }
     }).start();
   }
@@ -95,5 +90,21 @@ public class AudioHandler {
     }
 
     return sum / data.length;
+  }
+
+  private double normalizeIntensity(double decibel) {
+    double minDecibel = 0.0;
+    double maxDecibel = 100.0;
+
+    double minIntensity = 0.0;
+    double maxIntensity = 1.0;
+
+    double normalizedIntensity = (decibel - minDecibel) / (maxDecibel - minDecibel);
+    normalizedIntensity = Math.max(0.0, Math.min(1.0, normalizedIntensity)); // Clamp the value between 0 and 1
+
+    // Map the normalized intensity to the desired range
+    double mappedIntensity = minIntensity + normalizedIntensity * (maxIntensity - minIntensity);
+
+    return mappedIntensity;
   }
 }
