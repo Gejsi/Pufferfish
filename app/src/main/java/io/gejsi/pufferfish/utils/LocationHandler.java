@@ -37,6 +37,7 @@ public class LocationHandler {
   private FusedLocationProviderClient fusedLocationProviderClient;
 
   // A default location and default zoom to use when location permission is not granted.
+  // TODO: change this location.
   private final LatLng defaultLocation = new LatLng(44, -11);
   private static final int DEFAULT_ZOOM = 20;
 
@@ -49,14 +50,6 @@ public class LocationHandler {
   // The geographical location where the device is currently located. That is, the last-known
   // location retrieved by the Fused Location Provider.
   private Location lastKnownLocation;
-
-  public Location getLastKnownLocation() {
-    return lastKnownLocation;
-  }
-
-  public void setLastKnownLocation(Location lastKnownLocation) {
-    this.lastKnownLocation = lastKnownLocation;
-  }
 
   private LocationManager locationManager;
   private LocationListener locationListener;
@@ -101,6 +94,36 @@ public class LocationHandler {
     };
   }
 
+  public Location getLastKnownLocation() {
+    /*
+     * Get the best and most recent location of the device, which may be null in rare
+     * cases when a location is not available.
+     */
+    try {
+      if (locationPermissionGranted) {
+        Task<Location> locationResult = fusedLocationProviderClient.getLastLocation();
+        locationResult.addOnCompleteListener(activity, task -> {
+          if (task.isSuccessful()) {
+            // Set the map's camera position to the current location of the device.
+            lastKnownLocation = task.getResult();
+          } else {
+            Log.d(activity.TAG, "Current location is null. Using defaults.");
+            Log.e(activity.TAG, "Exception: %s", task.getException());
+            map.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, DEFAULT_ZOOM));
+          }
+        });
+      }
+    } catch (SecurityException e) {
+      Log.e("Exception: %s", e.getMessage(), e);
+    }
+
+    return lastKnownLocation;
+  }
+
+  public void setLastKnownLocation(Location lastKnownLocation) {
+    this.lastKnownLocation = lastKnownLocation;
+  }
+
   /**
    * Gets the current location of the device, and positions the map's camera.
    */
@@ -124,7 +147,6 @@ public class LocationHandler {
             Log.d(activity.TAG, "Current location is null. Using defaults.");
             Log.e(activity.TAG, "Exception: %s", task.getException());
             map.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, DEFAULT_ZOOM));
-            map.getUiSettings().setMyLocationButtonEnabled(false);
           }
         });
       }
