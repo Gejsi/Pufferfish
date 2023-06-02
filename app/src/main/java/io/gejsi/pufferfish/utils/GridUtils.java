@@ -7,12 +7,35 @@ import com.google.android.gms.maps.model.PolygonOptions;
 
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import io.gejsi.pufferfish.models.MeasurementIntensity;
 import mil.nga.mgrs.MGRS;
 
 public class GridUtils {
-  public static List<LatLng> getTileVertices(String coordinate) throws ParseException {
+  private Map<String, Polygon> tilesMap = new HashMap<>();
+
+  public void fillTile(GoogleMap map, String coordinate, MeasurementIntensity intensity) throws ParseException {
+    Polygon prevPolygon = tilesMap.get(coordinate);
+    // if a tile is already filled, remove it
+    if (prevPolygon != null) prevPolygon.remove();
+
+    List<LatLng> vertices = getTileVertices(coordinate);
+    Polygon polygon = map.addPolygon(new PolygonOptions().addAll(vertices).strokeColor(0x00000000));
+    tilesMap.put(coordinate, polygon);
+
+    if (intensity == MeasurementIntensity.Poor) {
+      polygon.setFillColor(0x50FC0303);
+    } else if (intensity == MeasurementIntensity.Average) {
+      polygon.setFillColor(0x50FCBE03);
+    } else {
+      polygon.setFillColor(0x5081C784);
+    }
+  }
+
+  private List<LatLng> getTileVertices(String coordinate) throws ParseException {
     MGRS topLeftMGRS = MGRS.parse(modifyCoordinateByType(coordinate, CoordinateType.TopLeft));
     LatLng topLeft = new LatLng(topLeftMGRS.toPoint().getLatitude(), topLeftMGRS.toPoint().getLongitude());
 
@@ -38,7 +61,7 @@ public class GridUtils {
     TopLeft, TopRight, BottomRight, BottomLeft;
   }
 
-  private static String modifyCoordinateByType(String str, CoordinateType type) {
+  private String modifyCoordinateByType(String str, CoordinateType type) {
     String text = str.substring(5);
     String first = text.substring(0, text.length() / 2);
     String second = text.substring(text.length() / 2);
@@ -56,22 +79,5 @@ public class GridUtils {
     }
 
     return str.substring(0, 5) + String.valueOf(firstNumber) + String.valueOf(secondNumber);
-  }
-
-  public enum TileSignal {
-    Good, Average, Poor;
-  }
-
-  public static void addTile(GoogleMap map, List<LatLng> vertices, TileSignal tileSignal) {
-    Polygon polygon = map.addPolygon(new PolygonOptions().addAll(vertices));
-    polygon.setStrokeColor(0x00000000);
-
-    if (tileSignal == TileSignal.Poor) {
-      polygon.setFillColor(0x50FC0303);
-    } else if (tileSignal == TileSignal.Average) {
-      polygon.setFillColor(0x50FCBE03);
-    } else {
-      polygon.setFillColor(0x5081C784);
-    }
   }
 }

@@ -5,13 +5,10 @@ import android.content.SharedPreferences;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
-import android.util.Log;
 
 import androidx.preference.PreferenceManager;
 
 import com.google.android.gms.maps.GoogleMap;
-
-import java.util.Arrays;
 
 import io.gejsi.pufferfish.controllers.MapsActivity;
 
@@ -67,12 +64,11 @@ public class AudioHandler {
         // which is a measure of the average power of the signal
         double rms = numRead != 0 ? Math.sqrt(sum / numRead): 0;
 
+        float airPressure = 20.0f;
         // decibels
-        double db = rms != 0 ? 20 * Math.log10(rms / 20.0f) : 0;
+        double db = rms != 0 ? 20 * Math.log10(rms / airPressure) : 0;
 
         data[n % averageLength] = db;
-        Log.d("AudioHandler", "DB " + db);
-        Log.d("AudioHandler", "Data " + Arrays.toString(data));
       }
     }).start();
   }

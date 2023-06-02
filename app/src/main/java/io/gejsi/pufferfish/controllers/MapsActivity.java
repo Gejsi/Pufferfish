@@ -30,6 +30,7 @@ import java.util.List;
 
 import io.gejsi.pufferfish.R;
 import io.gejsi.pufferfish.databinding.ActivityMapsBinding;
+import io.gejsi.pufferfish.models.MeasurementIntensity;
 import io.gejsi.pufferfish.models.MeasurementType;
 import io.gejsi.pufferfish.utils.AudioHandler;
 import io.gejsi.pufferfish.utils.GridUtils;
@@ -112,16 +113,26 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     FloatingActionButton recordBtn = binding.record;
     TooltipCompat.setTooltipText(recordBtn, "Save measurement");
+    GridUtils gridUtils = new GridUtils();
     recordBtn.setOnClickListener(view -> {
       double lat = locationHandler.getLastKnownLocation().getLatitude();
       double lng = locationHandler.getLastKnownLocation().getLongitude();
       LatLng latLng = new LatLng(lat, lng);
       MGRS mgrs = tileProvider.getMGRS(latLng);
-      Log.d(TAG, mgrs + " " + latLng);
 
       try {
-        List<LatLng> vertices = GridUtils.getTileVertices(mgrs.coordinate(GridType.TEN_METER));
-        GridUtils.addTile(map, vertices, GridUtils.TileSignal.Average);
+        String coordinate = mgrs.coordinate(GridType.TEN_METER);
+
+        if (measurementType == MeasurementType.Noise) {
+          double data = audioHandler.getData();
+
+          if (data < 10)
+            gridUtils.fillTile(map, coordinate, MeasurementIntensity.Good);
+          else if (data >= 10 && data <= 30)
+            gridUtils.fillTile(map, coordinate, MeasurementIntensity.Average);
+          else
+            gridUtils.fillTile(map, coordinate, MeasurementIntensity.Poor);
+        }
       } catch (ParseException e) {
         throw new RuntimeException(e);
       }
