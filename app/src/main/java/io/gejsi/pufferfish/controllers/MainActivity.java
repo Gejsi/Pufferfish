@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageButton;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
@@ -14,28 +15,46 @@ import io.gejsi.pufferfish.databinding.ActivityMainBinding;
 
 public class MainActivity extends AppCompatActivity {
 
-    private ActivityMainBinding binding;
+  private ActivityMainBinding binding;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
 
-        binding = ActivityMainBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
+    binding = ActivityMainBinding.inflate(getLayoutInflater());
+    setContentView(binding.getRoot());
 
-        Toolbar toolbar = binding.toolbar;
-        setSupportActionBar(toolbar);
+    Toolbar toolbar = binding.toolbar;
+    setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = binding.fab;
-        fab.setOnClickListener(view -> {
-            Intent intent = new Intent(MainActivity.this, MapsActivity.class);
-            startActivity(intent);
-        });
+    FloatingActionButton fab = binding.fab;
+    fab.setOnClickListener(view -> {
+      AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+      builder.setTitle("Select the type of measurement you want to perform");
 
-        ImageButton settingsButton = binding.settingsButton;
-        settingsButton.setOnClickListener((View.OnClickListener) view -> {
-            Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
-            startActivity(intent);
-        });
-    }
+      // Define the list of measurement types
+      String[] measurementTypes = {"Noise", "WiFi", "LTE"};
+
+      // Set the radio buttons for the measurement types
+      builder.setSingleChoiceItems(measurementTypes, -1, (dialog, which) -> {
+        String selectedMeasurementType = measurementTypes[which];
+
+        Intent intent = new Intent(MainActivity.this, MapsActivity.class);
+        intent.putExtra("measurementType", selectedMeasurementType);
+
+        startActivity(intent);
+
+        dialog.dismiss();
+      });
+
+      AlertDialog dialog = builder.create();
+      dialog.show();
+    });
+
+    ImageButton settingsButton = binding.settingsButton;
+    settingsButton.setOnClickListener((View.OnClickListener) view -> {
+      Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
+      startActivity(intent);
+    });
+  }
 }

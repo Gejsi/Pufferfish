@@ -3,11 +3,6 @@ package io.gejsi.pufferfish.controllers;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Spinner;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -78,32 +73,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     Toolbar toolbar = binding.toolbar;
     setSupportActionBar(toolbar);
 
-    Spinner measurementSpinner = findViewById(R.id.measurement_spinner);
-    String[] measurementTypes = new String[]{"Acoustic Noise", "WiFi strength", "LTE strength"};
-    ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, measurementTypes);
-    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-    measurementSpinner.setAdapter(adapter);
+    // Retrieve the selected measurement type from intent extras
+    if (getIntent().hasExtra("measurementType")) {
+      String selectedMeasurementType = getIntent().getStringExtra("measurementType");
 
-    measurementSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-      @Override
-      public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-        if (position == 0) {
-          measurementType = MeasurementType.Noise;
-          audioHandler.start();
-        } else if (position == 1) {
-          measurementType = MeasurementType.WiFi;
-          audioHandler.stop();
-        } else if (position == 2) {
-          measurementType = MeasurementType.LTE;
-          audioHandler.stop();
-        }
-      }
-
-      @Override
-      public void onNothingSelected(AdapterView<?> parent) {
-        Log.d(TAG, "Nothing selected");
-      }
-    });
+      // Convert the selected measurement type string to the MeasurementType enum
+      measurementType = MeasurementType.valueOf(selectedMeasurementType);
+    }
 
     FloatingActionButton loc = binding.loc;
     TooltipCompat.setTooltipText(loc, "My location");
@@ -126,12 +102,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (measurementType == MeasurementType.Noise) {
           double data = audioHandler.getData();
 
-          if (data < 10)
-            gridUtils.fillTile(map, coordinate, MeasurementIntensity.Good);
+          if (data < 10) gridUtils.fillTile(map, coordinate, MeasurementIntensity.Good);
           else if (data >= 10 && data <= 30)
             gridUtils.fillTile(map, coordinate, MeasurementIntensity.Average);
-          else
-            gridUtils.fillTile(map, coordinate, MeasurementIntensity.Poor);
+          else gridUtils.fillTile(map, coordinate, MeasurementIntensity.Poor);
         }
       } catch (ParseException e) {
         throw new RuntimeException(e);
@@ -154,7 +128,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   protected void onDestroy() {
     super.onDestroy();
     locationHandler.stop();
-    audioHandler.stop();
+
+    if (audioHandler != null) audioHandler.stop();
   }
 
   /**
@@ -241,5 +216,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     locationHandler.setLocationPermissionGranted(true);
     locationHandler.start();
     audioHandler.setAudioPermissionGranted(true);
+    if (measurementType == MeasurementType.Noise) audioHandler.start();
   }
 }
