@@ -21,8 +21,6 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Polygon;
-import com.google.android.gms.maps.model.PolygonOptions;
 import com.google.android.gms.maps.model.TileOverlayOptions;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -34,6 +32,7 @@ import io.gejsi.pufferfish.R;
 import io.gejsi.pufferfish.databinding.ActivityMapsBinding;
 import io.gejsi.pufferfish.models.MeasurementType;
 import io.gejsi.pufferfish.utils.AudioHandler;
+import io.gejsi.pufferfish.utils.GridUtils;
 import io.gejsi.pufferfish.utils.LocationHandler;
 import mil.nga.color.Color;
 import mil.nga.mgrs.MGRS;
@@ -118,16 +117,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
       double lng = locationHandler.getLastKnownLocation().getLongitude();
       LatLng latLng = new LatLng(lat, lng);
       MGRS mgrs = tileProvider.getMGRS(latLng);
+      Log.d(TAG, mgrs + " " + latLng);
 
       try {
-        LatLng topLeft = new LatLng(MGRS.parse("32T PQ 8607 3036").toPoint().getLatitude(), MGRS.parse("32T PQ 8607 3036").toPoint().getLongitude());
-        LatLng topRight = new LatLng(MGRS.parse("32T PQ 8608 3036").toPoint().getLatitude(), MGRS.parse("32T PQ 8608 3036").toPoint().getLongitude());
-        LatLng bottomLeft = new LatLng(MGRS.parse("32T PQ 8607 3035").toPoint().getLatitude(), MGRS.parse("32T PQ 8607 3035").toPoint().getLongitude());
-        LatLng bottomRight = new LatLng(MGRS.parse("32T PQ 8608 3035").toPoint().getLatitude(), MGRS.parse("32T PQ 8608 3035").toPoint().getLongitude());
-        List<LatLng> vertices = getTileVertices(mgrs.coordinate(GridType.TEN_METER));
-        Polygon polygon1 = map.addPolygon(new PolygonOptions().addAll(vertices));
-        polygon1.setStrokeColor(0x00000000);
-        polygon1.setFillColor(0x8081C784);
+        List<LatLng> vertices = GridUtils.getTileVertices(mgrs.coordinate(GridType.TEN_METER));
+        GridUtils.addTile(map, vertices, GridUtils.TileSignal.Average);
       } catch (ParseException e) {
         throw new RuntimeException(e);
       }
@@ -139,54 +133,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
       mapFragment.getMapAsync(this);
     }
 
-    Grids grids = Grids.create(GridType.TEN_METER);
+    Grids grids = Grids.create();
     grids.setColor(GridType.TEN_METER, Color.blue());
     tileProvider = MGRSTileProvider.create(this, grids);
     grids.enableAllLabelers();
   }
-
-  private List<LatLng> getTileVertices(String coordinate) throws ParseException {
-    MGRS topLeftMGRS = MGRS.parse(modifyCoordinateByType(coordinate, "tl"));
-    LatLng topLeft = new LatLng(topLeftMGRS.toPoint().getLatitude(), topLeftMGRS.toPoint().getLongitude());
-
-    MGRS topRightMGRS = MGRS.parse(modifyCoordinateByType(coordinate, "tr"));
-    LatLng topRight = new LatLng(topRightMGRS.toPoint().getLatitude(), topRightMGRS.toPoint().getLongitude());
-
-    MGRS bottomLeftMGRS = MGRS.parse(modifyCoordinateByType(coordinate, "bl"));
-    LatLng bottomLeft = new LatLng(bottomLeftMGRS.toPoint().getLatitude(), bottomLeftMGRS.toPoint().getLongitude());
-
-    MGRS bottomRightMGRS = MGRS.parse(modifyCoordinateByType(coordinate, "br"));
-    LatLng bottomRight = new LatLng(bottomRightMGRS.toPoint().getLatitude(), bottomRightMGRS.toPoint().getLongitude());
-
-    List<LatLng> vertices = new ArrayList<>();
-    vertices.add(topRight);
-    vertices.add(bottomRight);
-    vertices.add(bottomLeft);
-    vertices.add(topLeft);
-
-    return vertices;
-  }
-
-  private String modifyCoordinateByType(String str, String type) {
-    String text = str.substring(5);
-    String first = text.substring(0, text.length() / 2);
-    String second = text.substring(text.length() / 2);
-
-    int firstNumber = Integer.parseInt(first);
-    int secondNumber = Integer.parseInt(second);
-
-    if (type == "tl") {
-      secondNumber++;
-    } else if (type == "tr") {
-      firstNumber++;
-      secondNumber++;
-    } else if (type == "br") {
-      firstNumber++;
-    }
-
-    return str.substring(0, 5) + String.valueOf(firstNumber) + String.valueOf(secondNumber);
-  }
-
 
   @Override
   protected void onDestroy() {

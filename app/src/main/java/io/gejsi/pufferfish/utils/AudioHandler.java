@@ -5,10 +5,13 @@ import android.content.SharedPreferences;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.util.Log;
 
 import androidx.preference.PreferenceManager;
 
 import com.google.android.gms.maps.GoogleMap;
+
+import java.util.Arrays;
 
 import io.gejsi.pufferfish.controllers.MapsActivity;
 
@@ -47,9 +50,9 @@ public class AudioHandler {
 
     SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity);
     String averagePref = sharedPreferences.getString("average", "");
-    int average = averagePref.length() == 0 ? 10 : Integer.parseInt(averagePref);
+    int averageLength = averagePref.length() == 0 ? 10 : Integer.parseInt(averagePref);
 
-    data = new double[average];
+    data = new double[averageLength];
     // 16-bit audio data
     short[] buffer = new short[minBufferSize];
 
@@ -62,16 +65,14 @@ public class AudioHandler {
         }
         // root-mean-square (RMS) value of the audio data,
         // which is a measure of the average power of the signal
-        double rms = 0;
-        if (numRead != 0)
-           rms = Math.sqrt(sum / numRead);
+        double rms = numRead != 0 ? Math.sqrt(sum / numRead): 0;
 
         // decibels
-        double db = 0;
-        if (rms != 0)
-          db = 20 * Math.log10(rms / 20.0f);
+        double db = rms != 0 ? 20 * Math.log10(rms / 20.0f) : 0;
 
-        data[n % average] = normalizeIntensity(db);
+        data[n % averageLength] = db;
+        Log.d("AudioHandler", "DB " + db);
+        Log.d("AudioHandler", "Data " + Arrays.toString(data));
       }
     }).start();
   }

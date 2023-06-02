@@ -69,7 +69,8 @@ public class LocationHandler {
     locationListener = new LocationListener() {
       @Override
       public void onLocationChanged(Location location) {
-        Log.d(activity.TAG, "Location changed");
+        Log.d(activity.TAG, "Location changed" + location);
+        lastKnownLocation = location;
       }
 
       @Override
@@ -95,28 +96,6 @@ public class LocationHandler {
   }
 
   public Location getLastKnownLocation() {
-    /*
-     * Get the best and most recent location of the device, which may be null in rare
-     * cases when a location is not available.
-     */
-    try {
-      if (locationPermissionGranted) {
-        Task<Location> locationResult = fusedLocationProviderClient.getLastLocation();
-        locationResult.addOnCompleteListener(activity, task -> {
-          if (task.isSuccessful()) {
-            // Set the map's camera position to the current location of the device.
-            lastKnownLocation = task.getResult();
-          } else {
-            Log.d(activity.TAG, "Current location is null. Using defaults.");
-            Log.e(activity.TAG, "Exception: %s", task.getException());
-            map.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, DEFAULT_ZOOM));
-          }
-        });
-      }
-    } catch (SecurityException e) {
-      Log.e("Exception: %s", e.getMessage(), e);
-    }
-
     return lastKnownLocation;
   }
 
