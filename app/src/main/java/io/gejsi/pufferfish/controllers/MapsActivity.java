@@ -30,6 +30,7 @@ import io.gejsi.pufferfish.models.MeasurementType;
 import io.gejsi.pufferfish.utils.AudioHandler;
 import io.gejsi.pufferfish.utils.GridUtils;
 import io.gejsi.pufferfish.utils.LocationHandler;
+import io.gejsi.pufferfish.utils.LteHandler;
 import io.gejsi.pufferfish.utils.WifiHandler;
 import mil.nga.color.Color;
 import mil.nga.mgrs.MGRS;
@@ -44,11 +45,17 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   private LocationHandler locationHandler;
   private AudioHandler audioHandler;
   private WifiHandler wifiHandler;
+  private LteHandler lteHandler;
 
   private MeasurementType measurementType = MeasurementType.Noise;
 
   public static final int PERMISSIONS_REQUEST_CODE = 1;
-  public static final String[] PERMISSIONS_REQUIRED = {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.RECORD_AUDIO, Manifest.permission.ACCESS_WIFI_STATE};
+  public static final String[] PERMISSIONS_REQUIRED = {
+    Manifest.permission.ACCESS_FINE_LOCATION,
+    Manifest.permission.RECORD_AUDIO,
+    Manifest.permission.ACCESS_WIFI_STATE,
+    Manifest.permission.READ_PHONE_STATE
+  };
 
   // Keys for storing activity state.
   public static final String KEY_CAMERA_POSITION = "camera_position";
@@ -112,8 +119,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
           double data = wifiHandler.getData();
 
           if (data >= 3) gridUtils.fillTile(map, coordinate, MeasurementIntensity.Good);
-          else if (data == 2)
-            gridUtils.fillTile(map, coordinate, MeasurementIntensity.Average);
+          else if (data == 2) gridUtils.fillTile(map, coordinate, MeasurementIntensity.Average);
+          else gridUtils.fillTile(map, coordinate, MeasurementIntensity.Poor);
+        } else if (measurementType == MeasurementType.LTE) {
+          double data = lteHandler.getData();
+
+          if (data >= 3) gridUtils.fillTile(map, coordinate, MeasurementIntensity.Good);
+          else if (data == 2) gridUtils.fillTile(map, coordinate, MeasurementIntensity.Average);
           else gridUtils.fillTile(map, coordinate, MeasurementIntensity.Poor);
         }
       } catch (ParseException e) {
@@ -141,6 +153,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     if (audioHandler != null) audioHandler.stop();
 
     if (wifiHandler != null) wifiHandler.stop();
+
+    if (lteHandler != null) lteHandler.stop();
   }
 
   /**
@@ -165,6 +179,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     locationHandler = new LocationHandler(this, map);
     audioHandler = new AudioHandler(this, map);
     wifiHandler = new WifiHandler(this, map);
+    lteHandler = new LteHandler(this, map);
 
     map.addTileOverlay(new TileOverlayOptions().tileProvider(tileProvider));
     requestPermissions();
@@ -188,7 +203,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   }
 
   /**
-   * Handles the result of the request for permissions.
+   * {@inheritDoc}
    */
   @Override
   public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -235,6 +250,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     } else if (measurementType == MeasurementType.WiFi) {
       wifiHandler.setWifiPermissionGranted(true);
       wifiHandler.start();
+    } else if (measurementType == MeasurementType.LTE) {
+      lteHandler.setPermissionGranted(true);
+      lteHandler.start();
     }
   }
 }

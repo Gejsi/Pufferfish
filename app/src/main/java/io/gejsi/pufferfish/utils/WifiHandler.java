@@ -17,7 +17,6 @@ import io.gejsi.pufferfish.controllers.MapsActivity;
 public class WifiHandler {
   private boolean wifiPermissionGranted;
   private boolean isRecording = false;
-  private WifiManager wifiManager;
 
   // measurement data
   double[] data;
@@ -40,7 +39,7 @@ public class WifiHandler {
       return;
     }
 
-    wifiManager = (WifiManager) activity.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+    WifiManager wifiManager = (WifiManager) activity.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
     isRecording = true;
 
