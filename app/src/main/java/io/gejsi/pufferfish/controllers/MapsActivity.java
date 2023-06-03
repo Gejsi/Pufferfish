@@ -30,6 +30,7 @@ import io.gejsi.pufferfish.models.MeasurementType;
 import io.gejsi.pufferfish.utils.AudioHandler;
 import io.gejsi.pufferfish.utils.GridUtils;
 import io.gejsi.pufferfish.utils.LocationHandler;
+import io.gejsi.pufferfish.utils.WifiHandler;
 import mil.nga.color.Color;
 import mil.nga.mgrs.MGRS;
 import mil.nga.mgrs.grid.GridType;
@@ -42,11 +43,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   private ActivityMapsBinding binding;
   private LocationHandler locationHandler;
   private AudioHandler audioHandler;
+  private WifiHandler wifiHandler;
 
   private MeasurementType measurementType = MeasurementType.Noise;
 
   public static final int PERMISSIONS_REQUEST_CODE = 1;
-  public static final String[] PERMISSIONS_REQUIRED = {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.RECORD_AUDIO};
+  public static final String[] PERMISSIONS_REQUIRED = {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.RECORD_AUDIO, Manifest.permission.ACCESS_WIFI_STATE};
 
   // Keys for storing activity state.
   public static final String KEY_CAMERA_POSITION = "camera_position";
@@ -106,6 +108,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
           else if (data >= 10 && data <= 30)
             gridUtils.fillTile(map, coordinate, MeasurementIntensity.Average);
           else gridUtils.fillTile(map, coordinate, MeasurementIntensity.Poor);
+        } else if (measurementType == MeasurementType.WiFi) {
+          double data = wifiHandler.getData();
+
+          if (data >= 3) gridUtils.fillTile(map, coordinate, MeasurementIntensity.Good);
+          else if (data == 2)
+            gridUtils.fillTile(map, coordinate, MeasurementIntensity.Average);
+          else gridUtils.fillTile(map, coordinate, MeasurementIntensity.Poor);
         }
       } catch (ParseException e) {
         throw new RuntimeException(e);
@@ -130,6 +139,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     locationHandler.stop();
 
     if (audioHandler != null) audioHandler.stop();
+
+    if (wifiHandler != null) wifiHandler.stop();
   }
 
   /**
@@ -153,6 +164,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     map = googleMap;
     locationHandler = new LocationHandler(this, map);
     audioHandler = new AudioHandler(this, map);
+    wifiHandler = new WifiHandler(this, map);
+
     map.addTileOverlay(new TileOverlayOptions().tileProvider(tileProvider));
     requestPermissions();
   }
@@ -202,7 +215,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         if (showRationale) {
-          new AlertDialog.Builder(this).setTitle("Permission Required").setMessage("This app requires location and audio recording permissions to work properly.").setPositiveButton("OK", (dialog, which) -> requestPermissions()).setNegativeButton("Cancel", (dialog, which) -> finish()).setCancelable(false).show();
+          new AlertDialog.Builder(this).setTitle("Permission Required").setMessage("This app requires location, audio and Wi-Fi permissions to work properly.").setPositiveButton("OK", (dialog, which) -> requestPermissions()).setNegativeButton("Cancel", (dialog, which) -> finish()).setCancelable(false).show();
         } else {
           requestPermissions();
         }
@@ -215,7 +228,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   private void startHandlers() {
     locationHandler.setLocationPermissionGranted(true);
     locationHandler.start();
-    audioHandler.setAudioPermissionGranted(true);
-    if (measurementType == MeasurementType.Noise) audioHandler.start();
+
+    if (measurementType == MeasurementType.Noise) {
+      audioHandler.setAudioPermissionGranted(true);
+      audioHandler.start();
+    } else if (measurementType == MeasurementType.WiFi) {
+      wifiHandler.setWifiPermissionGranted(true);
+      wifiHandler.start();
+    }
   }
 }

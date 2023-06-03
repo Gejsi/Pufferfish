@@ -19,8 +19,8 @@ public class AudioHandler {
   // measurement data
   double[] data;
 
-  public void setAudioPermissionGranted(boolean locationPermissionGranted) {
-    this.audioPermissionGranted = locationPermissionGranted;
+  public void setAudioPermissionGranted(boolean audioPermissionGranted) {
+    this.audioPermissionGranted = audioPermissionGranted;
   }
 
   private MapsActivity activity;
