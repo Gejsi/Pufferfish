@@ -108,20 +108,20 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         String coordinate = mgrs.coordinate(GridType.TEN_METER);
 
         if (measurementType == MeasurementType.Noise) {
-          double data = audioHandler.getData();
+          double data = audioHandler.getAverageData();
 
           if (data < 10) gridUtils.fillTile(map, coordinate, MeasurementIntensity.Good);
           else if (data >= 10 && data <= 30)
             gridUtils.fillTile(map, coordinate, MeasurementIntensity.Average);
           else gridUtils.fillTile(map, coordinate, MeasurementIntensity.Poor);
         } else if (measurementType == MeasurementType.WiFi) {
-          double data = wifiHandler.getData();
+          double data = wifiHandler.getAverageData();
 
           if (data >= 3) gridUtils.fillTile(map, coordinate, MeasurementIntensity.Good);
           else if (data == 2) gridUtils.fillTile(map, coordinate, MeasurementIntensity.Average);
           else gridUtils.fillTile(map, coordinate, MeasurementIntensity.Poor);
         } else if (measurementType == MeasurementType.LTE) {
-          double data = lteHandler.getData();
+          double data = lteHandler.getAverageData();
 
           if (data >= 3) gridUtils.fillTile(map, coordinate, MeasurementIntensity.Good);
           else if (data == 2) gridUtils.fillTile(map, coordinate, MeasurementIntensity.Average);
@@ -244,13 +244,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     locationHandler.start();
 
     if (measurementType == MeasurementType.Noise) {
-      audioHandler.setAudioPermissionGranted(true);
       audioHandler.start();
     } else if (measurementType == MeasurementType.WiFi) {
-      wifiHandler.setWifiPermissionGranted(true);
       wifiHandler.start();
     } else if (measurementType == MeasurementType.LTE) {
-      lteHandler.setPermissionGranted(true);
       lteHandler.start();
     }
   }

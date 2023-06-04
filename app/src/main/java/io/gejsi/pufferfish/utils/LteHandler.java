@@ -2,13 +2,10 @@ package io.gejsi.pufferfish.utils;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.telephony.CellInfo;
 import android.telephony.CellInfoLte;
 import android.telephony.CellSignalStrengthLte;
 import android.telephony.TelephonyManager;
-
-import androidx.preference.PreferenceManager;
 
 import com.google.android.gms.maps.GoogleMap;
 
@@ -16,49 +13,28 @@ import java.util.List;
 
 import io.gejsi.pufferfish.controllers.MapsActivity;
 
-public class LteHandler {
-  private boolean permissionGranted;
-  private boolean isRecording = false;
-
-  // measurement data
-  double[] data;
-
-  public void setPermissionGranted(boolean permissionGranted) {
-    this.permissionGranted = permissionGranted;
-  }
-
-  private MapsActivity activity;
-  private GoogleMap map;
-
+public class LteHandler extends MeasurementHandler {
   public LteHandler(MapsActivity activity, GoogleMap googleMap) {
-    this.activity = activity;
-    this.map = googleMap;
+    super(activity, googleMap);
   }
 
   @SuppressLint("MissingPermission")
   public void start() {
-    if (!permissionGranted) {
-      return;
-    }
+    TelephonyManager telephonyManager = (TelephonyManager) this.getActivity().getSystemService(Context.TELEPHONY_SERVICE);
 
-    TelephonyManager telephonyManager = (TelephonyManager) activity.getSystemService(Context.TELEPHONY_SERVICE);
-
-    isRecording = true;
-
-    SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity);
-    String averagePref = sharedPreferences.getString("average", "");
-    int averageLength = averagePref.length() == 0 ? 10 : Integer.parseInt(averagePref);
-
-    data = new double[averageLength];
+    this.setRecording(true);
+    int averageLength = this.getAverageLengthPreference();
+    this.setData(new double[averageLength]);
 
     new Thread(() -> {
-      for (int n = 0; isRecording; n++) {
+      for (int n = 0; this.isRecording(); n++) {
         List<CellInfo> cellInfoList = telephonyManager.getAllCellInfo();
         if (cellInfoList != null) {
           for (CellInfo cellInfo : cellInfoList) {
             if (cellInfo instanceof CellInfoLte) {
               CellSignalStrengthLte signalStrengthLte = ((CellInfoLte) cellInfo).getCellSignalStrength();
               int level = signalStrengthLte.getLevel();
+              double[] data = getData();
               data[n % averageLength] = level;
               break;
             }
@@ -68,17 +44,8 @@ public class LteHandler {
     }).start();
   }
 
+  @Override
   public void stop() {
-    isRecording = false;
-  }
-
-  public double getData() {
-    double sum = 0;
-
-    for (int i = 0; i < data.length; i++) {
-      if (data[i] != 0) sum += data[i];
-    }
-
-    return sum / data.length;
+    this.setRecording(false);
   }
 }

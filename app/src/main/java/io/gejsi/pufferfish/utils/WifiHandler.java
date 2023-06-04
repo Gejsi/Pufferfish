@@ -2,11 +2,8 @@ package io.gejsi.pufferfish.utils;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
-
-import androidx.preference.PreferenceManager;
 
 import com.google.android.gms.maps.GoogleMap;
 
@@ -14,45 +11,24 @@ import java.util.List;
 
 import io.gejsi.pufferfish.controllers.MapsActivity;
 
-public class WifiHandler {
-  private boolean wifiPermissionGranted;
-  private boolean isRecording = false;
-
-  // measurement data
-  double[] data;
-
-  public void setWifiPermissionGranted(boolean wifiPermissionGranted) {
-    this.wifiPermissionGranted = wifiPermissionGranted;
-  }
-
-  private MapsActivity activity;
-  private GoogleMap map;
-
+public class WifiHandler extends MeasurementHandler {
   public WifiHandler(MapsActivity activity, GoogleMap googleMap) {
-    this.activity = activity;
-    this.map = googleMap;
+    super(activity, googleMap);
   }
 
   @SuppressLint("MissingPermission")
   public void start() {
-    if (!wifiPermissionGranted) {
-      return;
-    }
+    WifiManager wifiManager = (WifiManager) this.getActivity().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
-    WifiManager wifiManager = (WifiManager) activity.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-
-    isRecording = true;
-
-    SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity);
-    String averagePref = sharedPreferences.getString("average", "");
-    int averageLength = averagePref.length() == 0 ? 10 : Integer.parseInt(averagePref);
-
-    data = new double[averageLength];
+    this.setRecording(true);
+    int averageLength = this.getAverageLengthPreference();
+    this.setData(new double[averageLength]);
 
     new Thread(() -> {
-      for (int n = 0; isRecording; n++) {
+      for (int n = 0; this.isRecording(); n++) {
         List<ScanResult> wifiList = wifiManager.getScanResults();
         int level = findMaxWifiLevel(wifiList);
+        double[] data = this.getData();
         data[n % averageLength] = level;
       }
     }).start();
@@ -70,17 +46,8 @@ public class WifiHandler {
     return maxLevel;
   }
 
+  @Override
   public void stop() {
-    isRecording = false;
-  }
-
-  public double getData() {
-    double sum = 0;
-
-    for (int i = 0; i < data.length; i++) {
-      if (data[i] != 0) sum += data[i];
-    }
-
-    return sum / data.length;
+    this.setRecording(false);
   }
 }
