@@ -53,8 +53,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   public static final String[] PERMISSIONS_REQUIRED = {
     Manifest.permission.ACCESS_FINE_LOCATION,
     Manifest.permission.RECORD_AUDIO,
-    Manifest.permission.ACCESS_WIFI_STATE,
-    Manifest.permission.READ_PHONE_STATE
+    Manifest.permission.ACCESS_WIFI_STATE
   };
 
   // Keys for storing activity state.

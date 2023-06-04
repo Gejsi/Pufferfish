@@ -7,7 +7,6 @@ import android.telephony.CellInfo;
 import android.telephony.CellInfoLte;
 import android.telephony.CellSignalStrengthLte;
 import android.telephony.TelephonyManager;
-import android.widget.Toast;
 
 import androidx.preference.PreferenceManager;
 
@@ -43,10 +42,6 @@ public class LteHandler {
     }
 
     TelephonyManager telephonyManager = (TelephonyManager) activity.getSystemService(Context.TELEPHONY_SERVICE);
-    if (telephonyManager.getDataNetworkType() != TelephonyManager.NETWORK_TYPE_LTE) {
-      Toast.makeText(activity, "Only LTE is supported.", Toast.LENGTH_SHORT).show();
-      activity.finish();
-    }
 
     isRecording = true;
 
@@ -58,7 +53,6 @@ public class LteHandler {
 
     new Thread(() -> {
       for (int n = 0; isRecording; n++) {
-
         List<CellInfo> cellInfoList = telephonyManager.getAllCellInfo();
         if (cellInfoList != null) {
           for (CellInfo cellInfo : cellInfoList) {
