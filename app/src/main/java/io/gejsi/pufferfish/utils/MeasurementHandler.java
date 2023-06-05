@@ -17,9 +17,8 @@ public abstract class MeasurementHandler {
   private MapsActivity activity;
   private GoogleMap map;
 
-  public MeasurementHandler(MapsActivity activity, GoogleMap googleMap) {
+  public MeasurementHandler(MapsActivity activity) {
     this.activity = activity;
-    this.map = googleMap;
   }
 
   public abstract void start();
@@ -44,10 +43,6 @@ public abstract class MeasurementHandler {
 
   protected MapsActivity getActivity() {
     return activity;
-  }
-
-  protected GoogleMap getMap() {
-    return map;
   }
 
   public double getAverageData() {

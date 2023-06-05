@@ -110,22 +110,22 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (measurementType == MeasurementType.Noise) {
           double data = audioHandler.getAverageData();
 
-          if (data < 10) gridUtils.fillTile(map, coordinate, MeasurementIntensity.Good);
+          if (data < 10) gridUtils.fillTile(this, map, coordinate, MeasurementIntensity.Good);
           else if (data >= 10 && data <= 30)
-            gridUtils.fillTile(map, coordinate, MeasurementIntensity.Average);
-          else gridUtils.fillTile(map, coordinate, MeasurementIntensity.Poor);
+            gridUtils.fillTile(this, map, coordinate, MeasurementIntensity.Average);
+          else gridUtils.fillTile(this, map, coordinate, MeasurementIntensity.Poor);
         } else if (measurementType == MeasurementType.WiFi) {
           double data = wifiHandler.getAverageData();
 
-          if (data >= 3) gridUtils.fillTile(map, coordinate, MeasurementIntensity.Good);
-          else if (data == 2) gridUtils.fillTile(map, coordinate, MeasurementIntensity.Average);
-          else gridUtils.fillTile(map, coordinate, MeasurementIntensity.Poor);
+          if (data >= 3) gridUtils.fillTile(this, map, coordinate, MeasurementIntensity.Good);
+          else if (data == 2) gridUtils.fillTile(this, map, coordinate, MeasurementIntensity.Average);
+          else gridUtils.fillTile(this, map, coordinate, MeasurementIntensity.Poor);
         } else if (measurementType == MeasurementType.LTE) {
           double data = lteHandler.getAverageData();
 
-          if (data >= 3) gridUtils.fillTile(map, coordinate, MeasurementIntensity.Good);
-          else if (data == 2) gridUtils.fillTile(map, coordinate, MeasurementIntensity.Average);
-          else gridUtils.fillTile(map, coordinate, MeasurementIntensity.Poor);
+          if (data >= 3) gridUtils.fillTile(this, map, coordinate, MeasurementIntensity.Good);
+          else if (data == 2) gridUtils.fillTile(this, map, coordinate, MeasurementIntensity.Average);
+          else gridUtils.fillTile(this, map, coordinate, MeasurementIntensity.Poor);
         }
       } catch (ParseException e) {
         throw new RuntimeException(e);
@@ -144,6 +144,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     grids.enableAllLabelers();
   }
 
+ @Override
+ protected void onPause() {
+    super.onPause();
+    this.finish();
+ }
+  
   @Override
   protected void onDestroy() {
     super.onDestroy();
@@ -176,9 +182,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   public void onMapReady(@NonNull GoogleMap googleMap) {
     map = googleMap;
     locationHandler = new LocationHandler(this, map);
-    audioHandler = new AudioHandler(this, map);
-    wifiHandler = new WifiHandler(this, map);
-    lteHandler = new LteHandler(this, map);
+    audioHandler = new AudioHandler(this);
+    wifiHandler = new WifiHandler(this);
+    lteHandler = new LteHandler(this);
 
     map.addTileOverlay(new TileOverlayOptions().tileProvider(tileProvider));
     requestPermissions();

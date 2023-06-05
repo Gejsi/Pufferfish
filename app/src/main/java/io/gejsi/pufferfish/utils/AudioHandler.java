@@ -5,15 +5,13 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 
-import com.google.android.gms.maps.GoogleMap;
-
 import io.gejsi.pufferfish.controllers.MapsActivity;
 
 public class AudioHandler extends MeasurementHandler {
   private AudioRecord audioRecord;
 
-  public AudioHandler(MapsActivity activity, GoogleMap googleMap) {
-    super(activity, googleMap);
+  public AudioHandler(MapsActivity activity) {
+    super(activity);
   }
 
   @Override
@@ -47,7 +45,7 @@ public class AudioHandler extends MeasurementHandler {
         // decibels
         double db = rms != 0 ? 20 * Math.log10(rms / airPressure) : 0;
 
-        double[] data = getData();
+        double[] data = this.getData();
         data[n % averageLength] = db;
       }
     }).start();

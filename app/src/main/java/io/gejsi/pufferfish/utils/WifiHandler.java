@@ -5,15 +5,13 @@ import android.content.Context;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 
-import com.google.android.gms.maps.GoogleMap;
-
 import java.util.List;
 
 import io.gejsi.pufferfish.controllers.MapsActivity;
 
 public class WifiHandler extends MeasurementHandler {
-  public WifiHandler(MapsActivity activity, GoogleMap googleMap) {
-    super(activity, googleMap);
+  public WifiHandler(MapsActivity activity) {
+    super(activity);
   }
 
   @SuppressLint("MissingPermission")

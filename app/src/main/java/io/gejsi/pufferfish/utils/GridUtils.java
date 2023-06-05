@@ -1,5 +1,10 @@
 package io.gejsi.pufferfish.utils;
 
+import android.content.SharedPreferences;
+
+import androidx.appcompat.app.AlertDialog;
+import androidx.preference.PreferenceManager;
+
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Polygon;
@@ -11,20 +16,40 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.gejsi.pufferfish.controllers.MapsActivity;
 import io.gejsi.pufferfish.models.MeasurementIntensity;
 import mil.nga.mgrs.MGRS;
 
 public class GridUtils {
-  private Map<String, Polygon> tilesMap = new HashMap<>();
+  private Map<String, Polygon> polygons = new HashMap<>();
+  private Map<String, Long> timestamps = new HashMap<>();
 
-  public void fillTile(GoogleMap map, String coordinate, MeasurementIntensity intensity) throws ParseException {
-    Polygon prevPolygon = tilesMap.get(coordinate);
-    // if a tile is already filled, remove it
+  public void fillTile(MapsActivity activity, GoogleMap map, String coordinate, MeasurementIntensity intensity) throws ParseException {
+    int timePreference = getTimePreference(activity);
+
+    // check if enough time has passed since last fill
+    long currentTime = System.currentTimeMillis();
+    Long lastFillTime = timestamps.get(coordinate);
+    if (lastFillTime != null && (currentTime - lastFillTime) < timePreference) {
+      new AlertDialog.Builder(activity)
+              .setTitle("Cannot fill tile")
+              .setMessage("Not enough time has passed since last fill. Check your settings to tweak timings.")
+              .setPositiveButton("OK", null)
+              .create()
+              .show();
+      return;
+    }
+
+    // update the timestamp for the current coordinate
+    timestamps.put(coordinate, currentTime);
+
+    // if a tile is already filled, remove it so it will be replaced
+    Polygon prevPolygon = polygons.get(coordinate);
     if (prevPolygon != null) prevPolygon.remove();
 
     List<LatLng> vertices = getTileVertices(coordinate);
     Polygon polygon = map.addPolygon(new PolygonOptions().addAll(vertices).strokeColor(0x00000000));
-    tilesMap.put(coordinate, polygon);
+    polygons.put(coordinate, polygon);
 
     if (intensity == MeasurementIntensity.Poor) {
       polygon.setFillColor(0x50FC0303);
@@ -33,6 +58,14 @@ public class GridUtils {
     } else {
       polygon.setFillColor(0x5081C784);
     }
+  }
+
+  private int getTimePreference(MapsActivity activity) {
+    SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity);
+    String timePref = sharedPreferences.getString("time", "");
+    int time = timePref.length() == 0 ? 5 : Integer.parseInt(timePref);
+
+    return time * 1000;
   }
 
   private List<LatLng> getTileVertices(String coordinate) throws ParseException {
@@ -48,7 +81,7 @@ public class GridUtils {
     MGRS bottomRightMGRS = MGRS.parse(modifyCoordinateByType(coordinate, CoordinateType.BottomRight));
     LatLng bottomRight = new LatLng(bottomRightMGRS.toPoint().getLatitude(), bottomRightMGRS.toPoint().getLongitude());
 
-    List<LatLng> vertices = new ArrayList<>();
+    List<LatLng> vertices = new ArrayList<>(4);
     vertices.add(topRight);
     vertices.add(bottomRight);
     vertices.add(bottomLeft);

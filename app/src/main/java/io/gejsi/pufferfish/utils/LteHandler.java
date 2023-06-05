@@ -7,15 +7,13 @@ import android.telephony.CellInfoLte;
 import android.telephony.CellSignalStrengthLte;
 import android.telephony.TelephonyManager;
 
-import com.google.android.gms.maps.GoogleMap;
-
 import java.util.List;
 
 import io.gejsi.pufferfish.controllers.MapsActivity;
 
 public class LteHandler extends MeasurementHandler {
-  public LteHandler(MapsActivity activity, GoogleMap googleMap) {
-    super(activity, googleMap);
+  public LteHandler(MapsActivity activity) {
+    super(activity);
   }
 
   @SuppressLint("MissingPermission")
