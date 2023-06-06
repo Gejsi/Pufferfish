@@ -20,6 +20,18 @@
             app:layout_collapseMode="pin"
             app:title="@string/app_name">
 
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:id="@+id/btn_save"
+                android:textSize="14sp"
+                android:layout_alignParentEnd="true"
+                android:layout_marginEnd="8dp"
+                android:background="?attr/selectableItemBackground"
+                android:textColor="?attr/colorOnPrimary"
+                android:text="@string/save_heatmap"/>
+
         </androidx.appcompat.widget.Toolbar>
 
     </com.google.android.material.appbar.AppBarLayout>

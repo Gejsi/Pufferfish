@@ -1,4 +1,4 @@
-package io.gejsi.pufferfish.utils;
+package io.gejsi.pufferfish.handlers;
 
 import android.content.SharedPreferences;
 
@@ -17,14 +17,16 @@ import java.util.List;
 import java.util.Map;
 
 import io.gejsi.pufferfish.controllers.MapsActivity;
-import io.gejsi.pufferfish.models.MeasurementIntensity;
+import io.gejsi.pufferfish.models.Measurement;
 import mil.nga.mgrs.MGRS;
 
 public class GridUtils {
   private Map<String, Polygon> polygons = new HashMap<>();
   private Map<String, Long> timestamps = new HashMap<>();
 
-  public void fillTile(MapsActivity activity, GoogleMap map, String coordinate, MeasurementIntensity intensity) throws ParseException {
+  public void fillTile(MapsActivity activity, GoogleMap map, Measurement measurement) throws ParseException {
+    String coordinate = measurement.getCoordinate();
+    Measurement.Intensity intensity = measurement.getIntensity();
     int timePreference = getTimePreference(activity);
 
     // check if enough time has passed since last fill
@@ -51,9 +53,9 @@ public class GridUtils {
     Polygon polygon = map.addPolygon(new PolygonOptions().addAll(vertices).strokeColor(0x00000000));
     polygons.put(coordinate, polygon);
 
-    if (intensity == MeasurementIntensity.Poor) {
+    if (intensity == Measurement.Intensity.Poor) {
       polygon.setFillColor(0x50FC0303);
-    } else if (intensity == MeasurementIntensity.Average) {
+    } else if (intensity == Measurement.Intensity.Average) {
       polygon.setFillColor(0x50FCBE03);
     } else {
       polygon.setFillColor(0x5081C784);

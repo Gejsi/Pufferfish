@@ -1,44 +1,48 @@
 package io.gejsi.pufferfish.models;
 
-import mil.nga.grid.features.Point;
-import mil.nga.mgrs.MGRS;
-
 public class Measurement {
-  private int acousticNoiseIntensity = -1;
-  private int wifiStrength = -1;
-  private int lteStrength = -1;
-  private MGRS mgrs;
+  private String coordinate;
+  private Type type;
+  private Intensity intensity;
 
-  public Measurement(double latitude, double longitude) {
-    this.mgrs = MGRS.from(Point.point(longitude, latitude));
+  public Measurement(String coordinate) {
+    this.coordinate = coordinate;
   }
 
-  public MGRS getMGRS() {
-    return mgrs;
+  public String getCoordinate() {
+    return coordinate;
   }
 
-  public int getAcousticNoiseIntensity() {
-    return acousticNoiseIntensity;
+  public void setCoordinate(String coordinate) {
+    this.coordinate = coordinate;
   }
 
-  public int getWifiStrength() {
-    return wifiStrength;
+  public Type getType() {
+    return type;
   }
 
-  public int getLteStrength() {
-    return lteStrength;
+  public void setType(Type type) {
+    this.type = type;
   }
 
-  public void setAcousticNoiseIntensity(int acousticNoiseIntensity) {
-    this.acousticNoiseIntensity = acousticNoiseIntensity;
+  public Intensity getIntensity() {
+    return intensity;
   }
 
-  public void setWifiStrength(int wifiStrength) {
-    this.wifiStrength = wifiStrength;
+  public void setIntensity(Intensity intensity) {
+    this.intensity = intensity;
   }
 
-  public void setLteStrength(int lteStrength) {
-    this.lteStrength = lteStrength;
+  public enum Intensity {
+    Good,
+    Average,
+    Poor
+  }
+
+  public enum Type {
+    Noise,
+    WiFi,
+    LTE
   }
 }
 

@@ -1,4 +1,4 @@
-package io.gejsi.pufferfish.utils;
+package io.gejsi.pufferfish.handlers;
 
 import android.content.SharedPreferences;
 
@@ -48,8 +48,8 @@ public abstract class MeasurementHandler {
   public double getAverageData() {
     double sum = 0;
 
-    for (int i = 0; i < data.length; i++) {
-      if (data[i] != 0) sum += data[i];
+    for (double datum : data) {
+      if (datum != 0) sum += datum;
     }
 
     return sum / data.length;
@@ -58,8 +58,6 @@ public abstract class MeasurementHandler {
   protected int getAverageLengthPreference() {
     SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity);
     String averagePref = sharedPreferences.getString("average", "");
-    int averageLength = averagePref.length() == 0 ? 10 : Integer.parseInt(averagePref);
-
-    return averageLength;
+    return averagePref.length() == 0 ? 10 : Integer.parseInt(averagePref);
   }
 }

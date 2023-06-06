@@ -3,6 +3,8 @@ package io.gejsi.pufferfish.controllers;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.util.Log;
+import android.widget.Button;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -25,13 +27,12 @@ import java.util.List;
 
 import io.gejsi.pufferfish.R;
 import io.gejsi.pufferfish.databinding.ActivityMapsBinding;
-import io.gejsi.pufferfish.models.MeasurementIntensity;
-import io.gejsi.pufferfish.models.MeasurementType;
-import io.gejsi.pufferfish.utils.AudioHandler;
-import io.gejsi.pufferfish.utils.GridUtils;
-import io.gejsi.pufferfish.utils.LocationHandler;
-import io.gejsi.pufferfish.utils.LteHandler;
-import io.gejsi.pufferfish.utils.WifiHandler;
+import io.gejsi.pufferfish.models.Measurement;
+import io.gejsi.pufferfish.handlers.AudioHandler;
+import io.gejsi.pufferfish.handlers.GridUtils;
+import io.gejsi.pufferfish.handlers.LocationHandler;
+import io.gejsi.pufferfish.handlers.LteHandler;
+import io.gejsi.pufferfish.handlers.WifiHandler;
 import mil.nga.color.Color;
 import mil.nga.mgrs.MGRS;
 import mil.nga.mgrs.grid.GridType;
@@ -47,14 +48,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   private WifiHandler wifiHandler;
   private LteHandler lteHandler;
 
-  private MeasurementType measurementType = MeasurementType.Noise;
+  private Measurement.Type measurementType = Measurement.Type.Noise;
 
   public static final int PERMISSIONS_REQUEST_CODE = 1;
-  public static final String[] PERMISSIONS_REQUIRED = {
-    Manifest.permission.ACCESS_FINE_LOCATION,
-    Manifest.permission.RECORD_AUDIO,
-    Manifest.permission.ACCESS_WIFI_STATE
-  };
+  public static final String[] PERMISSIONS_REQUIRED = {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.RECORD_AUDIO, Manifest.permission.ACCESS_WIFI_STATE};
 
   // Keys for storing activity state.
   public static final String KEY_CAMERA_POSITION = "camera_position";
@@ -75,19 +72,24 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
       locationHandler.setCameraPosition(savedInstanceState.getParcelable(KEY_CAMERA_POSITION));
     }
 
+    // Retrieve the selected measurement type from intent extras
+    if (getIntent().hasExtra("measurementType")) {
+      String selectedMeasurementType = getIntent().getStringExtra("measurementType");
+
+      // Convert the selected measurement type string to the MeasurementType enum
+      measurementType = Measurement.Type.valueOf(selectedMeasurementType);
+    }
+
     binding = ActivityMapsBinding.inflate(getLayoutInflater());
     setContentView(binding.getRoot());
 
     Toolbar toolbar = binding.toolbar;
     setSupportActionBar(toolbar);
 
-    // Retrieve the selected measurement type from intent extras
-    if (getIntent().hasExtra("measurementType")) {
-      String selectedMeasurementType = getIntent().getStringExtra("measurementType");
-
-      // Convert the selected measurement type string to the MeasurementType enum
-      measurementType = MeasurementType.valueOf(selectedMeasurementType);
-    }
+    Button btnSave = binding.btnSave;
+    btnSave.setOnClickListener(v -> {
+      Log.d(TAG, "Saved heatmap");
+    });
 
     FloatingActionButton loc = binding.loc;
     TooltipCompat.setTooltipText(loc, "My location");
@@ -101,32 +103,34 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     recordBtn.setOnClickListener(view -> {
       double lat = locationHandler.getLastKnownLocation().getLatitude();
       double lng = locationHandler.getLastKnownLocation().getLongitude();
-      LatLng latLng = new LatLng(lat, lng);
-      MGRS mgrs = tileProvider.getMGRS(latLng);
+      MGRS mgrs = tileProvider.getMGRS(new LatLng(lat, lng));
+      String coordinate = mgrs.coordinate(GridType.TEN_METER);
+
+      Measurement measurement = new Measurement(coordinate);
+      measurement.setType(measurementType);
+
+      if (measurementType == Measurement.Type.Noise) {
+        double data = audioHandler.getAverageData();
+
+        if (data < 10) measurement.setIntensity(Measurement.Intensity.Good);
+        else if (data >= 10 && data <= 30) measurement.setIntensity(Measurement.Intensity.Average);
+        else measurement.setIntensity(Measurement.Intensity.Poor);
+      } else if (measurementType == Measurement.Type.WiFi) {
+        double data = wifiHandler.getAverageData();
+
+        if (data >= 3) measurement.setIntensity(Measurement.Intensity.Good);
+        else if (data == 2) measurement.setIntensity(Measurement.Intensity.Average);
+        else measurement.setIntensity(Measurement.Intensity.Poor);
+      } else if (measurementType == Measurement.Type.LTE) {
+        double data = lteHandler.getAverageData();
+
+        if (data >= 3) measurement.setIntensity(Measurement.Intensity.Good);
+        else if (data == 2) measurement.setIntensity(Measurement.Intensity.Average);
+        else measurement.setIntensity(Measurement.Intensity.Poor);
+      }
 
       try {
-        String coordinate = mgrs.coordinate(GridType.TEN_METER);
-
-        if (measurementType == MeasurementType.Noise) {
-          double data = audioHandler.getAverageData();
-
-          if (data < 10) gridUtils.fillTile(this, map, coordinate, MeasurementIntensity.Good);
-          else if (data >= 10 && data <= 30)
-            gridUtils.fillTile(this, map, coordinate, MeasurementIntensity.Average);
-          else gridUtils.fillTile(this, map, coordinate, MeasurementIntensity.Poor);
-        } else if (measurementType == MeasurementType.WiFi) {
-          double data = wifiHandler.getAverageData();
-
-          if (data >= 3) gridUtils.fillTile(this, map, coordinate, MeasurementIntensity.Good);
-          else if (data == 2) gridUtils.fillTile(this, map, coordinate, MeasurementIntensity.Average);
-          else gridUtils.fillTile(this, map, coordinate, MeasurementIntensity.Poor);
-        } else if (measurementType == MeasurementType.LTE) {
-          double data = lteHandler.getAverageData();
-
-          if (data >= 3) gridUtils.fillTile(this, map, coordinate, MeasurementIntensity.Good);
-          else if (data == 2) gridUtils.fillTile(this, map, coordinate, MeasurementIntensity.Average);
-          else gridUtils.fillTile(this, map, coordinate, MeasurementIntensity.Poor);
-        }
+        gridUtils.fillTile(this, map, measurement);
       } catch (ParseException e) {
         throw new RuntimeException(e);
       }
@@ -144,21 +148,19 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     grids.enableAllLabelers();
   }
 
- @Override
- protected void onPause() {
+  @Override
+  protected void onPause() {
     super.onPause();
     this.finish();
- }
-  
+  }
+
   @Override
   protected void onDestroy() {
     super.onDestroy();
     locationHandler.stop();
 
     if (audioHandler != null) audioHandler.stop();
-
     if (wifiHandler != null) wifiHandler.stop();
-
     if (lteHandler != null) lteHandler.stop();
   }
 
@@ -249,11 +251,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     locationHandler.setLocationPermissionGranted(true);
     locationHandler.start();
 
-    if (measurementType == MeasurementType.Noise) {
+    if (measurementType == Measurement.Type.Noise) {
       audioHandler.start();
-    } else if (measurementType == MeasurementType.WiFi) {
+    } else if (measurementType == Measurement.Type.WiFi) {
       wifiHandler.start();
-    } else if (measurementType == MeasurementType.LTE) {
+    } else if (measurementType == Measurement.Type.LTE) {
       lteHandler.start();
     }
   }
