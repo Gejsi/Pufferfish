@@ -2,6 +2,7 @@ package io.gejsi.pufferfish.controllers;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 
@@ -56,5 +57,14 @@ public class MainActivity extends AppCompatActivity {
       Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
       startActivity(intent);
     });
+  }
+
+  @Override
+  protected void onResume() {
+    super.onResume();
+    String[] files = this.getApplicationContext().fileList();
+    for (String file : files) {
+      Log.d("MainActivity", "file " + file);
+    }
   }
 }

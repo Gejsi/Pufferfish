@@ -3,8 +3,8 @@ package io.gejsi.pufferfish.controllers;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -21,18 +21,28 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.TileOverlayOptions;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import io.gejsi.pufferfish.R;
 import io.gejsi.pufferfish.databinding.ActivityMapsBinding;
-import io.gejsi.pufferfish.models.Measurement;
 import io.gejsi.pufferfish.handlers.AudioHandler;
 import io.gejsi.pufferfish.handlers.GridUtils;
 import io.gejsi.pufferfish.handlers.LocationHandler;
 import io.gejsi.pufferfish.handlers.LteHandler;
 import io.gejsi.pufferfish.handlers.WifiHandler;
+import io.gejsi.pufferfish.models.Measurement;
 import mil.nga.color.Color;
 import mil.nga.mgrs.MGRS;
 import mil.nga.mgrs.grid.GridType;
@@ -47,6 +57,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   private AudioHandler audioHandler;
   private WifiHandler wifiHandler;
   private LteHandler lteHandler;
+
+  private List<Measurement> measurements;
 
   private Measurement.Type measurementType = Measurement.Type.Noise;
 
@@ -66,6 +78,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
+    measurements = new ArrayList<>();
+
     // Retrieve location and camera position from saved instance state.
     if (savedInstanceState != null) {
       locationHandler.setLastKnownLocation(savedInstanceState.getParcelable(KEY_LOCATION));
@@ -75,8 +89,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     // Retrieve the selected measurement type from intent extras
     if (getIntent().hasExtra("measurementType")) {
       String selectedMeasurementType = getIntent().getStringExtra("measurementType");
-
-      // Convert the selected measurement type string to the MeasurementType enum
       measurementType = Measurement.Type.valueOf(selectedMeasurementType);
     }
 
@@ -86,9 +98,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     Toolbar toolbar = binding.toolbar;
     setSupportActionBar(toolbar);
 
-    Button btnSave = binding.btnSave;
-    btnSave.setOnClickListener(v -> {
-      Log.d(TAG, "Saved heatmap");
+    Button saveBtn = binding.btnSave;
+    saveBtn.setOnClickListener(v -> {
+      saveHeatmap();
     });
 
     FloatingActionButton loc = binding.loc;
@@ -133,6 +145,23 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         gridUtils.fillTile(this, map, measurement);
       } catch (ParseException e) {
         throw new RuntimeException(e);
+      }
+
+      // save recorded measurement:
+      // - if it is already present, replace it.
+      boolean isMeasurementUpdated = false;
+      for (int i = 0; i < measurements.size(); i++) {
+        Measurement existingMeasurement = measurements.get(i);
+        if (existingMeasurement.getCoordinate().equals(measurement.getCoordinate())) {
+          measurements.set(i, measurement);
+          isMeasurementUpdated = true;
+          break;
+        }
+      }
+
+      // - otherwise, add it to the list
+      if (!isMeasurementUpdated) {
+        measurements.add(measurement);
       }
     });
 
@@ -237,7 +266,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         if (showRationale) {
-          new AlertDialog.Builder(this).setTitle("Permission Required").setMessage("This app requires location, audio and Wi-Fi permissions to work properly.").setPositiveButton("OK", (dialog, which) -> requestPermissions()).setNegativeButton("Cancel", (dialog, which) -> finish()).setCancelable(false).show();
+          new AlertDialog.Builder(this).setTitle("Permission Required").setMessage("This app requires location, audio, Wi-Fi and LTE permissions to work properly.").setPositiveButton("OK", (dialog, which) -> requestPermissions()).setNegativeButton("Cancel", (dialog, which) -> finish()).setCancelable(false).show();
         } else {
           requestPermissions();
         }
@@ -257,6 +286,55 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
       wifiHandler.start();
     } else if (measurementType == Measurement.Type.LTE) {
       lteHandler.start();
+    }
+  }
+
+  private void saveHeatmap() {
+    if (measurements.isEmpty()) {
+      Toast.makeText(this, "No measurements have been taken yet. Cannot save the heatmap.", Toast.LENGTH_SHORT).show();
+      return;
+    }
+
+    String timestamp = new SimpleDateFormat("dd-MM-yyyy_HH:mm:ss", Locale.getDefault()).format(new Date());
+
+    // Create the JSON array for measurements
+    JSONArray measurementsArray = new JSONArray();
+
+    // Iterate over your measurements and add them to the array
+    for (Measurement measurement : measurements) {
+      try {
+        // Create a JSON object for each measurement
+        JSONObject measurementObject = new JSONObject();
+        measurementObject.put("coordinate", measurement.getCoordinate());
+        measurementObject.put("type", measurement.getType().toString());
+        measurementObject.put("intensity", measurement.getIntensity().toString());
+
+        // Add the measurement object to the array
+        measurementsArray.put(measurementObject);
+      } catch (JSONException e) {
+        e.printStackTrace();
+      }
+    }
+
+    JSONObject rootObject = new JSONObject();
+    try {
+      rootObject.put("timestamp", timestamp);
+      rootObject.put("type", measurementType);
+      rootObject.put("measurements", measurementsArray);
+    } catch (JSONException e) {
+      e.printStackTrace();
+    }
+
+    String fileName = "HEATMAP_" + timestamp + ".json";
+    try {
+      File file = new File(getFilesDir(), fileName);
+      FileWriter fileWriter = new FileWriter(file);
+      fileWriter.write(rootObject.toString());
+      fileWriter.close();
+      Toast.makeText(this, "Heatmap saved as " + fileName, Toast.LENGTH_SHORT).show();
+    } catch (IOException e) {
+      e.printStackTrace();
+      Toast.makeText(this, "Error saving heatmap", Toast.LENGTH_SHORT).show();
     }
   }
 }
