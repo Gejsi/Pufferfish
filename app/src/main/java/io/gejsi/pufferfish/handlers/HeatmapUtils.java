@@ -1,5 +1,6 @@
 package io.gejsi.pufferfish.handlers;
 
+import android.app.Activity;
 import android.widget.Toast;
 
 import org.json.JSONArray;
@@ -14,11 +15,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-import io.gejsi.pufferfish.controllers.MapsActivity;
 import io.gejsi.pufferfish.models.Measurement;
 
 public class HeatmapUtils {
-  public static void saveHeatmap(MapsActivity activity, Measurement.Type measurementType, List<Measurement> measurements) {
+  public static void saveHeatmap(Activity activity, Measurement.Type measurementType, List<Measurement> measurements) {
     if (measurements.isEmpty()) {
       Toast.makeText(activity, "No measurements have been taken yet. Cannot save the heatmap.", Toast.LENGTH_SHORT).show();
       return;

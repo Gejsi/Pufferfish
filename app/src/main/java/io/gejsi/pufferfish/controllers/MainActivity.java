@@ -2,6 +2,8 @@ package io.gejsi.pufferfish.controllers;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
+import android.widget.AdapterView;
 import android.widget.ImageButton;
 import android.widget.ListView;
 
@@ -12,12 +14,13 @@ import androidx.appcompat.widget.Toolbar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import io.gejsi.pufferfish.R;
 import io.gejsi.pufferfish.databinding.ActivityMainBinding;
 
 public class MainActivity extends AppCompatActivity {
-
   private ActivityMainBinding binding;
 
   @Override
@@ -65,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
   protected void onResume() {
     super.onResume();
 
-    String[] files = Arrays.stream(this.getApplicationContext().fileList())
+    List<String> files = Arrays.stream(this.getApplicationContext().fileList())
             .filter(fileName -> fileName.startsWith("Heatmap_") && fileName.endsWith(".json"))
             .sorted((fileName1, fileName2) -> {
               // Split the file names into parts
@@ -84,9 +87,31 @@ public class MainActivity extends AppCompatActivity {
                 return time2.compareTo(time1); // sort by time in descending order
               }
             })
-            .toArray(String[]::new);
+            .collect(Collectors.toList());
 
     ListView heatmapListView = findViewById(R.id.heatmapListView);
-    heatmapListView.setAdapter(new HeatmapListAdapter(this, files));
+    HeatmapListAdapter heatmapListAdapter = new HeatmapListAdapter(this, files);
+    heatmapListView.setAdapter(heatmapListAdapter);
+
+    AdapterView.OnItemClickListener dialogHandler = (parent, v, position, id) -> {
+      String fileName = files.get(position);
+      AlertDialog.Builder builder = new AlertDialog.Builder(parent.getContext());
+      builder.setTitle("Actions")
+              .setMessage("lorem")
+              .setPositiveButton("Open", (dialog, which) -> Log.d("HeatmapListAdapter", "File contents:"))
+              .setNegativeButton("Delete", (dialog, which) -> {
+                deleteHeatmap(fileName);
+                // update the ListView
+                files.remove(position);
+                heatmapListAdapter.notifyDataSetChanged();
+              })
+              .show();
+    };
+
+    heatmapListView.setOnItemClickListener(dialogHandler);
+  }
+
+  private void deleteHeatmap(String fileName) {
+    this.deleteFile(fileName);
   }
 }

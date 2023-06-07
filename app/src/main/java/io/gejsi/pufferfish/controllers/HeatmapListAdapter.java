@@ -2,7 +2,6 @@ package io.gejsi.pufferfish.controllers;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,13 +9,13 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import androidx.appcompat.app.AlertDialog;
+import java.util.List;
 
 import io.gejsi.pufferfish.R;
 import io.gejsi.pufferfish.models.Measurement;
 
 public class HeatmapListAdapter extends ArrayAdapter<String> {
-  public HeatmapListAdapter(Context context, String[] fileNames) {
+  public HeatmapListAdapter(Context context, List<String> fileNames) {
     super(context, 0, fileNames);
   }
 
@@ -32,11 +31,8 @@ public class HeatmapListAdapter extends ArrayAdapter<String> {
 
     String fileName = getItem(position);
     String[] fileParts = fileName.split("_");
-    Measurement.Type measurementType = Measurement.Type.valueOf(fileParts[1]);
-    String date = fileParts[2];
-    String time = fileParts[3].substring(0, fileParts[3].length() - 5);
-    fileNameTextView.setText(date + " · " + time);
 
+    Measurement.Type measurementType = Measurement.Type.valueOf(fileParts[1]);
     if (measurementType == Measurement.Type.Noise)
       iconImageView.setImageResource(R.drawable.ic_sound);
     else if (measurementType == Measurement.Type.WiFi)
@@ -44,15 +40,9 @@ public class HeatmapListAdapter extends ArrayAdapter<String> {
     else if (measurementType == Measurement.Type.LTE)
       iconImageView.setImageResource(R.drawable.ic_lte);
 
-    convertView.setOnClickListener(v -> {
-      Log.d("MainActivity", "File contents: " + fileName);
-      AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-      builder.setTitle("Options")
-              .setMessage("bruh")
-              .setPositiveButton("Open", (dialog, which) -> Log.d("HeatmapListAdapter", "File contents: " + fileName))
-              .setNegativeButton("Delete", (dialog, which) -> Log.d("HeatmapListAdapter", "delete" + fileName))
-              .show();
-    });
+    String date = fileParts[2];
+    String time = fileParts[3].substring(0, fileParts[3].length() - 5);
+    fileNameTextView.setText(date + " · " + time);
 
     return convertView;
   }
