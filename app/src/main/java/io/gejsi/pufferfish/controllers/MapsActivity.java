@@ -3,6 +3,7 @@ package io.gejsi.pufferfish.controllers;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 
 import androidx.annotation.NonNull;
@@ -19,9 +20,13 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.TileOverlayOptions;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
+import java.lang.reflect.Type;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import io.gejsi.pufferfish.R;
@@ -68,13 +73,21 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    measurements = new ArrayList<>();
-
     // Retrieve location and camera position from saved instance state.
     if (savedInstanceState != null) {
       locationHandler.setLastKnownLocation(savedInstanceState.getParcelable(KEY_LOCATION));
       locationHandler.setCameraPosition(savedInstanceState.getParcelable(KEY_CAMERA_POSITION));
     }
+
+    // Retrieve the measurements from intent extras
+    if (getIntent().hasExtra("measurements")) {
+      Type type = new TypeToken<List<Measurement>>() {}.getType();
+      measurements = new Gson().fromJson(getIntent().getStringExtra("measurements"), type);
+    } else {
+      measurements = new ArrayList<>();
+    }
+
+    Log.d("MainActivity", "onCreate: " + Arrays.toString(measurements.toArray()));
 
     // Retrieve the selected measurement type from intent extras
     if (getIntent().hasExtra("measurementType")) {
@@ -91,6 +104,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     Button saveBtn = binding.btnSave;
     saveBtn.setOnClickListener(v -> {
       HeatmapUtils.saveHeatmap(this, measurementType, measurements);
+      this.finish();
     });
 
     FloatingActionButton loc = binding.loc;

@@ -9,6 +9,12 @@ public class Measurement {
     this.coordinate = coordinate;
   }
 
+  public Measurement(String coordinate, Type type, Intensity intensity) {
+    this.coordinate = coordinate;
+    this.type = type;
+    this.intensity = intensity;
+  }
+
   public String getCoordinate() {
     return coordinate;
   }
@@ -43,6 +49,15 @@ public class Measurement {
     Noise,
     WiFi,
     LTE
+  }
+
+  @Override
+  public String toString() {
+    return "Measurement{" +
+            "coordinate='" + coordinate + '\'' +
+            ", type=" + type +
+            ", intensity=" + intensity +
+            '}';
   }
 }
 

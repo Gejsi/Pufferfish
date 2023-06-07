@@ -2,7 +2,6 @@ package io.gejsi.pufferfish.controllers;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.AdapterView;
 import android.widget.ImageButton;
 import android.widget.ListView;
@@ -12,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.gson.Gson;
 
 import java.util.Arrays;
 import java.util.List;
@@ -19,6 +19,8 @@ import java.util.stream.Collectors;
 
 import io.gejsi.pufferfish.R;
 import io.gejsi.pufferfish.databinding.ActivityMainBinding;
+import io.gejsi.pufferfish.handlers.HeatmapUtils;
+import io.gejsi.pufferfish.models.Measurement;
 
 public class MainActivity extends AppCompatActivity {
   private ActivityMainBinding binding;
@@ -47,7 +49,6 @@ public class MainActivity extends AppCompatActivity {
 
         Intent intent = new Intent(MainActivity.this, MapsActivity.class);
         intent.putExtra("measurementType", selectedMeasurementType);
-
         startActivity(intent);
 
         dialog.dismiss();
@@ -98,7 +99,15 @@ public class MainActivity extends AppCompatActivity {
       AlertDialog.Builder builder = new AlertDialog.Builder(parent.getContext());
       builder.setTitle("Actions")
               .setMessage("lorem")
-              .setPositiveButton("Open", (dialog, which) -> Log.d("HeatmapListAdapter", "File contents:"))
+              .setPositiveButton("Open", (dialog, which) -> {
+
+                List<Measurement> measurements = loadHeatmap(fileName);
+                Intent intent = new Intent(MainActivity.this, MapsActivity.class);
+                intent.putExtra("measurementType", measurements.get(0).getType().toString());
+                intent.putExtra("measurements", new Gson().toJson(measurements));
+
+                startActivity(intent);
+              })
               .setNegativeButton("Delete", (dialog, which) -> {
                 deleteHeatmap(fileName);
                 // update the ListView
@@ -109,6 +118,10 @@ public class MainActivity extends AppCompatActivity {
     };
 
     heatmapListView.setOnItemClickListener(dialogHandler);
+  }
+
+  private List<Measurement> loadHeatmap(String fileName) {
+    return HeatmapUtils.loadHeatmap(this, fileName);
   }
 
   private void deleteHeatmap(String fileName) {
