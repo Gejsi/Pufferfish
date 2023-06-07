@@ -4,7 +4,6 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.widget.Button;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -21,24 +20,15 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.TileOverlayOptions;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 import io.gejsi.pufferfish.R;
 import io.gejsi.pufferfish.databinding.ActivityMapsBinding;
 import io.gejsi.pufferfish.handlers.AudioHandler;
 import io.gejsi.pufferfish.handlers.GridUtils;
+import io.gejsi.pufferfish.handlers.HeatmapUtils;
 import io.gejsi.pufferfish.handlers.LocationHandler;
 import io.gejsi.pufferfish.handlers.LteHandler;
 import io.gejsi.pufferfish.handlers.WifiHandler;
@@ -100,7 +90,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     Button saveBtn = binding.btnSave;
     saveBtn.setOnClickListener(v -> {
-      saveHeatmap();
+      HeatmapUtils.saveHeatmap(this, measurementType, measurements);
     });
 
     FloatingActionButton loc = binding.loc;
@@ -286,55 +276,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
       wifiHandler.start();
     } else if (measurementType == Measurement.Type.LTE) {
       lteHandler.start();
-    }
-  }
-
-  private void saveHeatmap() {
-    if (measurements.isEmpty()) {
-      Toast.makeText(this, "No measurements have been taken yet. Cannot save the heatmap.", Toast.LENGTH_SHORT).show();
-      return;
-    }
-
-    String timestamp = new SimpleDateFormat("dd-MM-yyyy_HH:mm:ss", Locale.getDefault()).format(new Date());
-
-    // Create the JSON array for measurements
-    JSONArray measurementsArray = new JSONArray();
-
-    // Iterate over your measurements and add them to the array
-    for (Measurement measurement : measurements) {
-      try {
-        // Create a JSON object for each measurement
-        JSONObject measurementObject = new JSONObject();
-        measurementObject.put("coordinate", measurement.getCoordinate());
-        measurementObject.put("type", measurement.getType().toString());
-        measurementObject.put("intensity", measurement.getIntensity().toString());
-
-        // Add the measurement object to the array
-        measurementsArray.put(measurementObject);
-      } catch (JSONException e) {
-        e.printStackTrace();
-      }
-    }
-
-    JSONObject rootObject = new JSONObject();
-    try {
-      rootObject.put("timestamp", timestamp);
-      rootObject.put("type", measurementType);
-      rootObject.put("measurements", measurementsArray);
-    } catch (JSONException e) {
-      e.printStackTrace();
-    }
-
-    String fileName = "HEATMAP_" + timestamp + ".json";
-    try {
-      File file = new File(getFilesDir(), fileName);
-      FileWriter fileWriter = new FileWriter(file);
-      fileWriter.write(rootObject.toString());
-      fileWriter.close();
-      Toast.makeText(this, "Heatmap saved as " + fileName, Toast.LENGTH_SHORT).show();
-    } catch (IOException e) {
-      e.printStackTrace();
-      Toast.makeText(this, "Error saving heatmap", Toast.LENGTH_SHORT).show();
     }
   }
 }
