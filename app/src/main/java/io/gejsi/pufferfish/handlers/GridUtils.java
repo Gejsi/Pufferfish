@@ -62,6 +62,12 @@ public class GridUtils {
     }
   }
 
+  public void drawHeatmap(MapsActivity activity, GoogleMap map, List<Measurement> measurements) throws ParseException {
+    for (Measurement measurement : measurements) {
+      this.fillTile(activity, map, measurement);
+    }
+  }
+
   private int getTimePreference(MapsActivity activity) {
     SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity);
     String timePref = sharedPreferences.getString("time", "");

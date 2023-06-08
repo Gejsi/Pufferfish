@@ -3,7 +3,6 @@ package io.gejsi.pufferfish.controllers;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.Button;
 
 import androidx.annotation.NonNull;
@@ -20,13 +19,9 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.TileOverlayOptions;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
-import java.lang.reflect.Type;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import io.gejsi.pufferfish.R;
@@ -69,6 +64,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
    */
   private MGRSTileProvider tileProvider;
 
+  private GridUtils gridUtils;
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -80,14 +77,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     // Retrieve the measurements from intent extras
-    if (getIntent().hasExtra("measurements")) {
-      Type type = new TypeToken<List<Measurement>>() {}.getType();
-      measurements = new Gson().fromJson(getIntent().getStringExtra("measurements"), type);
+    if (getIntent().hasExtra("fileName")) {
+      String fileName = getIntent().getStringExtra("fileName");
+      measurements = HeatmapUtils.loadHeatmap(this, fileName);
     } else {
       measurements = new ArrayList<>();
     }
-
-    Log.d("MainActivity", "onCreate: " + Arrays.toString(measurements.toArray()));
 
     // Retrieve the selected measurement type from intent extras
     if (getIntent().hasExtra("measurementType")) {
@@ -113,9 +108,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
       locationHandler.getDeviceLocation();
     });
 
+    gridUtils = new GridUtils();
     FloatingActionButton recordBtn = binding.record;
     TooltipCompat.setTooltipText(recordBtn, "Save measurement");
-    GridUtils gridUtils = new GridUtils();
     recordBtn.setOnClickListener(view -> {
       double lat = locationHandler.getLastKnownLocation().getLatitude();
       double lng = locationHandler.getLastKnownLocation().getLongitude();
@@ -152,7 +147,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
       }
 
       // save recorded measurement:
-      // - if it is already present, replace it.
+      // - if a tile has already a measurement, replace it
       boolean isMeasurementUpdated = false;
       for (int i = 0; i < measurements.size(); i++) {
         Measurement existingMeasurement = measurements.get(i);
@@ -192,6 +187,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     super.onDestroy();
     locationHandler.stop();
 
+
     if (audioHandler != null) audioHandler.stop();
     if (wifiHandler != null) wifiHandler.stop();
     if (lteHandler != null) lteHandler.stop();
@@ -221,7 +217,17 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     wifiHandler = new WifiHandler(this);
     lteHandler = new LteHandler(this);
 
+    // add MGRS grid
     map.addTileOverlay(new TileOverlayOptions().tileProvider(tileProvider));
+    // draw an initial map if measurements are coming from an existing heatmap
+    if (!measurements.isEmpty()) {
+      try {
+        gridUtils.drawHeatmap(this, map, measurements);
+      } catch (ParseException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
     requestPermissions();
   }
 

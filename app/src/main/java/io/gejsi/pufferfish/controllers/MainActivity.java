@@ -11,7 +11,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.gson.Gson;
 
 import java.util.Arrays;
 import java.util.List;
@@ -96,15 +95,17 @@ public class MainActivity extends AppCompatActivity {
 
     AdapterView.OnItemClickListener dialogHandler = (parent, v, position, id) -> {
       String fileName = files.get(position);
+
       AlertDialog.Builder builder = new AlertDialog.Builder(parent.getContext());
       builder.setTitle("Actions")
               .setMessage("lorem")
               .setPositiveButton("Open", (dialog, which) -> {
+                String[] fileParts = fileName.split("_");
+                String selectedMeasurementType = fileParts[1];
 
-                List<Measurement> measurements = loadHeatmap(fileName);
                 Intent intent = new Intent(MainActivity.this, MapsActivity.class);
-                intent.putExtra("measurementType", measurements.get(0).getType().toString());
-                intent.putExtra("measurements", new Gson().toJson(measurements));
+                intent.putExtra("measurementType", selectedMeasurementType);
+                intent.putExtra("fileName", fileName);
 
                 startActivity(intent);
               })
