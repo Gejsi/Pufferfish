@@ -71,10 +71,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    // Retrieve location and camera position from saved instance state.
+    // Retrieve location from saved instance state.
     if (savedInstanceState != null) {
       locationHandler.setLastKnownLocation(savedInstanceState.getParcelable(KEY_LOCATION));
-      locationHandler.setCameraPosition(savedInstanceState.getParcelable(KEY_CAMERA_POSITION));
     }
 
     // Retrieve the measurements from intent extras

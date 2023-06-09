@@ -1,6 +1,7 @@
 package io.gejsi.pufferfish.handlers;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
 import android.location.Location;
 import android.location.LocationListener;
@@ -10,35 +11,11 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.tasks.Task;
-import com.google.android.libraries.places.api.Places;
-import com.google.android.libraries.places.api.net.PlacesClient;
-
-import io.gejsi.pufferfish.BuildConfig;
-import io.gejsi.pufferfish.controllers.MapsActivity;
 
 public class LocationHandler {
-  private CameraPosition cameraPosition;
-
-  public void setCameraPosition(CameraPosition cameraPosition) {
-    this.cameraPosition = cameraPosition;
-  }
-
-  // The entry point to the Places API.
-  private PlacesClient placesClient;
-
-  // The entry point to the Fused Location Provider.
-  private FusedLocationProviderClient fusedLocationProviderClient;
-
-  // A default location and default zoom to use when location permission is not granted.
-  // TODO: change this location.
-  private final LatLng defaultLocation = new LatLng(44, -11);
   private static final int DEFAULT_ZOOM = 20;
 
   private boolean locationPermissionGranted;
@@ -47,35 +24,30 @@ public class LocationHandler {
     this.locationPermissionGranted = locationPermissionGranted;
   }
 
-  // The geographical location where the device is currently located. That is, the last-known
-  // location retrieved by the Fused Location Provider.
+  // The geographical location where the device is currently located.
   private Location lastKnownLocation;
 
   private LocationManager locationManager;
   private LocationListener locationListener;
-  private MapsActivity activity;
+  private Activity activity;
   private GoogleMap map;
 
-  public LocationHandler(MapsActivity mapsActivity, GoogleMap googleMap) {
+  public LocationHandler(Activity mapsActivity, GoogleMap googleMap) {
     this.activity = mapsActivity;
     this.map = googleMap;
-
-    Places.initialize(activity.getApplicationContext(), BuildConfig.MAPS_API_KEY);
-    placesClient = Places.createClient(activity);
-    fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(activity);
 
     locationManager = (LocationManager) activity.getSystemService(Context.LOCATION_SERVICE);
 
     locationListener = new LocationListener() {
       @Override
       public void onLocationChanged(Location location) {
-        Log.d(activity.TAG, "Location changed" + location);
+        Log.d("MapsActivity", "Location changed" + location);
         lastKnownLocation = location;
       }
 
       @Override
       public void onStatusChanged(String provider, int status, Bundle extras) {
-        Log.d(activity.TAG, "Status changed");
+        Log.d("MapsActivity", "Status changed");
         if (status == LocationProvider.OUT_OF_SERVICE) {
           handleDisabledProvider();
         }
@@ -83,13 +55,13 @@ public class LocationHandler {
 
       @Override
       public void onProviderEnabled(String provider) {
-        Log.d(activity.TAG, "Provider enabled");
+        Log.d("MapsActivity", "Provider enabled");
         getDeviceLocation();
       }
 
       @Override
       public void onProviderDisabled(String provider) {
-        Log.d(activity.TAG, "Provider disabled");
+        Log.d("MapsActivity", "Provider disabled");
         handleDisabledProvider();
       }
     };
@@ -114,20 +86,10 @@ public class LocationHandler {
      */
     try {
       if (locationPermissionGranted) {
-        Task<Location> locationResult = fusedLocationProviderClient.getLastLocation();
-        locationResult.addOnCompleteListener(activity, task -> {
-          if (task.isSuccessful()) {
-            // Set the map's camera position to the current location of the device.
-            lastKnownLocation = task.getResult();
-            if (lastKnownLocation != null) {
-              map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude()), DEFAULT_ZOOM));
-            }
-          } else {
-            Log.d(activity.TAG, "Current location is null. Using defaults.");
-            Log.e(activity.TAG, "Exception: %s", task.getException());
-            map.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, DEFAULT_ZOOM));
-          }
-        });
+        lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        if (lastKnownLocation != null) {
+          map.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude()), DEFAULT_ZOOM));
+        }
       }
     } catch (SecurityException e) {
       Log.e("Exception: %s", e.getMessage(), e);
@@ -137,7 +99,7 @@ public class LocationHandler {
   @SuppressLint("MissingPermission")
   public void start() {
     getDeviceLocation();
-    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 1, locationListener);
+    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, locationListener);
   }
 
   public void stop() {
@@ -154,10 +116,8 @@ public class LocationHandler {
     try {
       if (locationPermissionGranted) {
         map.setMyLocationEnabled(true);
-        map.getUiSettings().setMyLocationButtonEnabled(true);
       } else {
         map.setMyLocationEnabled(false);
-        map.getUiSettings().setMyLocationButtonEnabled(false);
         lastKnownLocation = null;
       }
     } catch (SecurityException e) {
