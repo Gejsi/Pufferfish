@@ -1,6 +1,7 @@
 package io.gejsi.pufferfish.controllers;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.widget.Button;
@@ -109,6 +110,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     });
 
     gridUtils = new GridUtils();
+
+    FloatingActionButton backgroundBtn = binding.background;
+    TooltipCompat.setTooltipText(backgroundBtn, "Save measurements in background");
+    backgroundBtn.setOnClickListener(view -> {
+      Intent measurementService = new Intent(this, MeasurementService.class);
+      this.startService(measurementService);
+    });
+
     FloatingActionButton recordBtn = binding.record;
     TooltipCompat.setTooltipText(recordBtn, "Save measurement");
     recordBtn.setOnClickListener(view -> {
@@ -157,7 +166,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
           break;
         }
       }
-
       // - otherwise, add it to the list
       if (!isMeasurementUpdated) {
         measurements.add(measurement);
@@ -187,10 +195,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     super.onDestroy();
     locationHandler.stop();
 
-
     if (audioHandler != null) audioHandler.stop();
     if (wifiHandler != null) wifiHandler.stop();
     if (lteHandler != null) lteHandler.stop();
+
+    MeasurementService.stopService();
   }
 
   /**

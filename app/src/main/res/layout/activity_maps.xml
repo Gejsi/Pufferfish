@@ -55,7 +55,19 @@
         app:fabSize="mini"
         app:layout_anchor="@id/map"
         app:layout_anchorGravity="bottom|start"
-        android:contentDescription="Get current location" />
+        android:contentDescription="@string/get_current_location" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/background"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="16dp"
+        android:layout_marginBottom="88dp"
+        android:src="@drawable/ic_record_background"
+        app:backgroundTint="?attr/colorPrimary"
+        app:layout_anchor="@id/map"
+        app:layout_anchorGravity="bottom|end"
+        android:contentDescription="@string/record_measurements_in_background" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/record"
@@ -66,6 +78,6 @@
         app:backgroundTint="?attr/colorSecondary"
         app:layout_anchor="@id/map"
         app:layout_anchorGravity="bottom|end"
-        android:contentDescription="Record measurement" />
+        android:contentDescription="@string/record_measurement" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

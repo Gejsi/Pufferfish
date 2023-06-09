@@ -114,4 +114,7 @@
     </string>
     <string name="attachment_summary_off">Only download attachments when manually requested</string>
     <string name="save_heatmap">SAVE</string>
+    <string name="get_current_location">Get current location</string>
+    <string name="record_measurements_in_background">Record measurements in background</string>
+    <string name="record_measurement">Record measurement</string>
 </resources>
