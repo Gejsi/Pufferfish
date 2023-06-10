@@ -34,6 +34,7 @@ import io.gejsi.pufferfish.handlers.LocationHandler;
 import io.gejsi.pufferfish.handlers.LteHandler;
 import io.gejsi.pufferfish.handlers.WifiHandler;
 import io.gejsi.pufferfish.models.Measurement;
+import io.gejsi.pufferfish.models.MeasurementSampler;
 import mil.nga.color.Color;
 import mil.nga.mgrs.MGRS;
 import mil.nga.mgrs.grid.GridType;
@@ -45,19 +46,17 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   private GoogleMap map;
   private ActivityMapsBinding binding;
   private LocationHandler locationHandler;
-  private AudioHandler audioHandler;
-  private WifiHandler wifiHandler;
-  private LteHandler lteHandler;
+
+  private MeasurementSampler sampler;
 
   private List<Measurement> measurements;
 
   private Measurement.Type measurementType = Measurement.Type.Noise;
 
   public static final int PERMISSIONS_REQUEST_CODE = 1;
-  public static final String[] PERMISSIONS_REQUIRED = {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.RECORD_AUDIO, Manifest.permission.ACCESS_WIFI_STATE};
+  public static final String[] PERMISSIONS_REQUIRED = {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.RECORD_AUDIO, Manifest.permission.ACCESS_WIFI_STATE};
 
   // Keys for storing activity state.
-  public static final String KEY_CAMERA_POSITION = "camera_position";
   public static final String KEY_LOCATION = "location";
 
   /**
@@ -72,6 +71,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     super.onCreate(savedInstanceState);
 
     // Retrieve location from saved instance state.
+    // TODO: maybe add this info in the files as well, so they are different for each heatmap
     if (savedInstanceState != null) {
       locationHandler.setLastKnownLocation(savedInstanceState.getParcelable(KEY_LOCATION));
     }
@@ -104,9 +104,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     FloatingActionButton loc = binding.loc;
     TooltipCompat.setTooltipText(loc, "My location");
-    loc.setOnClickListener(view -> {
-      locationHandler.getDeviceLocation();
-    });
+    loc.setOnClickListener(view -> locationHandler.getDeviceLocation());
 
     gridUtils = new GridUtils();
 
@@ -114,6 +112,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     TooltipCompat.setTooltipText(backgroundBtn, "Save measurements in background");
     backgroundBtn.setOnClickListener(view -> {
       Intent measurementService = new Intent(this, MeasurementService.class);
+      measurementService.putExtra("measurementType", measurementType.toString());
       this.startService(measurementService);
     });
 
@@ -129,19 +128,19 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
       measurement.setType(measurementType);
 
       if (measurementType == Measurement.Type.Noise) {
-        double data = audioHandler.getAverageData();
+        double data = sampler.getAverageData();
 
         if (data < 10) measurement.setIntensity(Measurement.Intensity.Good);
         else if (data >= 10 && data <= 30) measurement.setIntensity(Measurement.Intensity.Average);
         else measurement.setIntensity(Measurement.Intensity.Poor);
       } else if (measurementType == Measurement.Type.WiFi) {
-        double data = wifiHandler.getAverageData();
+        double data = sampler.getAverageData();
 
         if (data >= 3) measurement.setIntensity(Measurement.Intensity.Good);
         else if (data == 2) measurement.setIntensity(Measurement.Intensity.Average);
         else measurement.setIntensity(Measurement.Intensity.Poor);
       } else if (measurementType == Measurement.Type.LTE) {
-        double data = lteHandler.getAverageData();
+        double data = sampler.getAverageData();
 
         if (data >= 3) measurement.setIntensity(Measurement.Intensity.Good);
         else if (data == 2) measurement.setIntensity(Measurement.Intensity.Average);
@@ -193,11 +192,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   protected void onDestroy() {
     super.onDestroy();
     locationHandler.stop();
-
-    if (audioHandler != null) audioHandler.stop();
-    if (wifiHandler != null) wifiHandler.stop();
-    if (lteHandler != null) lteHandler.stop();
-
+    if (sampler != null) sampler.stop();
     MeasurementService.stopService();
   }
 
@@ -207,7 +202,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   @Override
   protected void onSaveInstanceState(@NonNull Bundle outState) {
     if (map != null) {
-      outState.putParcelable(KEY_CAMERA_POSITION, map.getCameraPosition());
       outState.putParcelable(KEY_LOCATION, locationHandler.getLastKnownLocation());
     }
     super.onSaveInstanceState(outState);
@@ -221,9 +215,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   public void onMapReady(@NonNull GoogleMap googleMap) {
     map = googleMap;
     locationHandler = new LocationHandler(this, map);
-    audioHandler = new AudioHandler(this);
-    wifiHandler = new WifiHandler(this);
-    lteHandler = new LteHandler(this);
+
+    if (measurementType == Measurement.Type.Noise) {
+      sampler = new AudioHandler(this);
+    } else if (measurementType == Measurement.Type.WiFi) {
+      sampler = new WifiHandler(this);
+    } else if (measurementType == Measurement.Type.LTE) {
+      sampler = new LteHandler(this);
+    }
 
     // add MGRS grid
     map.addTileOverlay(new TileOverlayOptions().tileProvider(tileProvider));
@@ -297,13 +296,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   private void startHandlers() {
     locationHandler.setLocationPermissionGranted(true);
     locationHandler.start();
-
-    if (measurementType == Measurement.Type.Noise) {
-      audioHandler.start();
-    } else if (measurementType == Measurement.Type.WiFi) {
-      wifiHandler.start();
-    } else if (measurementType == Measurement.Type.LTE) {
-      lteHandler.start();
-    }
+    sampler.start();
   }
 }

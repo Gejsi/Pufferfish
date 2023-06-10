@@ -1,17 +1,21 @@
 package io.gejsi.pufferfish.handlers;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.util.Log;
 
-import io.gejsi.pufferfish.controllers.MapsActivity;
+import java.util.Arrays;
 
-public class AudioHandler extends MeasurementHandler {
+import io.gejsi.pufferfish.models.MeasurementSampler;
+
+public class AudioHandler extends MeasurementSampler {
   private AudioRecord audioRecord;
 
-  public AudioHandler(MapsActivity activity) {
-    super(activity);
+  public AudioHandler(Context context) {
+    super(context);
   }
 
   @Override
@@ -47,6 +51,8 @@ public class AudioHandler extends MeasurementHandler {
 
         double[] data = this.getData();
         data[n % averageLength] = db;
+        Log.d("Test", "start: " + db);
+        Log.d("Test", "start: " + Arrays.toString(data));
       }
     }).start();
   }

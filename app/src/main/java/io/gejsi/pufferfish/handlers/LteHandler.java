@@ -9,16 +9,16 @@ import android.telephony.TelephonyManager;
 
 import java.util.List;
 
-import io.gejsi.pufferfish.controllers.MapsActivity;
+import io.gejsi.pufferfish.models.MeasurementSampler;
 
-public class LteHandler extends MeasurementHandler {
-  public LteHandler(MapsActivity activity) {
-    super(activity);
+public class LteHandler extends MeasurementSampler {
+  public LteHandler(Context context) {
+    super(context);
   }
 
   @SuppressLint("MissingPermission")
   public void start() {
-    TelephonyManager telephonyManager = (TelephonyManager) this.getActivity().getSystemService(Context.TELEPHONY_SERVICE);
+    TelephonyManager telephonyManager = (TelephonyManager) this.getContext().getSystemService(Context.TELEPHONY_SERVICE);
 
     this.setRecording(true);
     int averageLength = this.getAverageLengthPreference();

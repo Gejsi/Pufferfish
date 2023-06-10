@@ -1,24 +1,20 @@
-package io.gejsi.pufferfish.handlers;
+package io.gejsi.pufferfish.models;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 
 import androidx.preference.PreferenceManager;
 
-import com.google.android.gms.maps.GoogleMap;
-
-import io.gejsi.pufferfish.controllers.MapsActivity;
-
-public abstract class MeasurementHandler {
+public abstract class MeasurementSampler {
   private boolean isRecording = false;
 
   // measurement data
   private double[] data;
 
-  private MapsActivity activity;
-  private GoogleMap map;
+  private Context context;
 
-  public MeasurementHandler(MapsActivity activity) {
-    this.activity = activity;
+  public MeasurementSampler(Context context) {
+    this.context = context;
   }
 
   public abstract void start();
@@ -41,8 +37,8 @@ public abstract class MeasurementHandler {
     this.data = data;
   }
 
-  protected MapsActivity getActivity() {
-    return activity;
+  protected Context getContext() {
+    return context;
   }
 
   public double getAverageData() {
@@ -56,7 +52,7 @@ public abstract class MeasurementHandler {
   }
 
   protected int getAverageLengthPreference() {
-    SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity);
+    SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
     String averagePref = sharedPreferences.getString("average", "");
     return averagePref.length() == 0 ? 10 : Integer.parseInt(averagePref);
   }

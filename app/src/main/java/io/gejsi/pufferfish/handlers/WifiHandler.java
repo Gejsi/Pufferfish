@@ -7,16 +7,16 @@ import android.net.wifi.WifiManager;
 
 import java.util.List;
 
-import io.gejsi.pufferfish.controllers.MapsActivity;
+import io.gejsi.pufferfish.models.MeasurementSampler;
 
-public class WifiHandler extends MeasurementHandler {
-  public WifiHandler(MapsActivity activity) {
-    super(activity);
+public class WifiHandler extends MeasurementSampler {
+  public WifiHandler(Context context) {
+    super(context);
   }
 
   @SuppressLint("MissingPermission")
   public void start() {
-    WifiManager wifiManager = (WifiManager) this.getActivity().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+    WifiManager wifiManager = (WifiManager) this.getContext().getSystemService(Context.WIFI_SERVICE);
 
     this.setRecording(true);
     int averageLength = this.getAverageLengthPreference();
