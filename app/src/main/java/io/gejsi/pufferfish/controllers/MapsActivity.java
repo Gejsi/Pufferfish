@@ -23,7 +23,10 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.gejsi.pufferfish.R;
 import io.gejsi.pufferfish.databinding.ActivityMapsBinding;
@@ -42,14 +45,13 @@ import mil.nga.mgrs.grid.style.Grids;
 import mil.nga.mgrs.tile.MGRSTileProvider;
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
-  public static final String TAG = MapsActivity.class.getSimpleName();
   private GoogleMap map;
   private ActivityMapsBinding binding;
   private LocationHandler locationHandler;
 
   private MeasurementSampler sampler;
 
-  private List<Measurement> measurements;
+  private Map<String, Measurement> measurements;
 
   private Measurement.Type measurementType = Measurement.Type.Noise;
 
@@ -81,7 +83,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
       String fileName = getIntent().getStringExtra("fileName");
       measurements = HeatmapUtils.loadHeatmap(this, fileName);
     } else {
-      measurements = new ArrayList<>();
+      measurements = new HashMap<>();
     }
 
     // Retrieve the selected measurement type from intent extras
@@ -98,7 +100,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     Button saveBtn = binding.btnSave;
     saveBtn.setOnClickListener(v -> {
-      HeatmapUtils.saveHeatmap(this, measurementType, measurements);
+      HeatmapUtils.saveHeatmap(this, measurementType, measurements.values());
       this.finish();
     });
 
@@ -110,10 +112,21 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     FloatingActionButton backgroundBtn = binding.background;
     TooltipCompat.setTooltipText(backgroundBtn, "Save measurements in background");
+    AtomicBoolean isBackgroundModeEnabled = new AtomicBoolean(false);
+    Intent serviceIntent = new Intent(this, MeasurementService.class);
+    serviceIntent.putExtra("measurementType", measurementType.toString());
     backgroundBtn.setOnClickListener(view -> {
-      Intent measurementService = new Intent(this, MeasurementService.class);
-      measurementService.putExtra("measurementType", measurementType.toString());
-      this.startService(measurementService);
+      if (isBackgroundModeEnabled.get()) {
+        enableUIInteraction();
+        startHandlers();
+        stopService(serviceIntent);
+        isBackgroundModeEnabled.set(false);
+      } else {
+        disableUIInteraction();
+        stopHandlers();
+        startService(serviceIntent);
+        isBackgroundModeEnabled.set(true);
+      }
     });
 
     FloatingActionButton recordBtn = binding.record;
@@ -126,26 +139,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
       Measurement measurement = new Measurement(coordinate);
       measurement.setType(measurementType);
-
-      if (measurementType == Measurement.Type.Noise) {
-        double data = sampler.getAverageData();
-
-        if (data < 10) measurement.setIntensity(Measurement.Intensity.Good);
-        else if (data >= 10 && data <= 30) measurement.setIntensity(Measurement.Intensity.Average);
-        else measurement.setIntensity(Measurement.Intensity.Poor);
-      } else if (measurementType == Measurement.Type.WiFi) {
-        double data = sampler.getAverageData();
-
-        if (data >= 3) measurement.setIntensity(Measurement.Intensity.Good);
-        else if (data == 2) measurement.setIntensity(Measurement.Intensity.Average);
-        else measurement.setIntensity(Measurement.Intensity.Poor);
-      } else if (measurementType == Measurement.Type.LTE) {
-        double data = sampler.getAverageData();
-
-        if (data >= 3) measurement.setIntensity(Measurement.Intensity.Good);
-        else if (data == 2) measurement.setIntensity(Measurement.Intensity.Average);
-        else measurement.setIntensity(Measurement.Intensity.Poor);
-      }
+      measurement.setIntensity(sampler.getAverageData());
 
       try {
         gridUtils.fillTile(this, map, measurement);
@@ -153,20 +147,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         throw new RuntimeException(e);
       }
 
-      // save recorded measurement:
-      // - if a tile has already a measurement, replace it
-      boolean isMeasurementUpdated = false;
-      for (int i = 0; i < measurements.size(); i++) {
-        Measurement existingMeasurement = measurements.get(i);
-        if (existingMeasurement.getCoordinate().equals(measurement.getCoordinate())) {
-          measurements.set(i, measurement);
-          isMeasurementUpdated = true;
-          break;
-        }
-      }
-      // - otherwise, add it to the list
-      if (!isMeasurementUpdated) {
-        measurements.add(measurement);
+      if (measurements.containsKey(measurement.getCoordinate())) {
+        measurements.replace(measurement.getCoordinate(), measurement);
+      } else {
+        measurements.put(measurement.getCoordinate(), measurement);
       }
     });
 
@@ -192,8 +176,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   protected void onDestroy() {
     super.onDestroy();
     locationHandler.stop();
-    if (sampler != null) sampler.stop();
-    MeasurementService.stopService();
+    sampler.stop();
+    // if (measurementService.isServiceRunning()) measurementService.stopMan();
   }
 
   /**
@@ -229,7 +213,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     // draw an initial map if measurements are coming from an existing heatmap
     if (!measurements.isEmpty()) {
       try {
-        gridUtils.drawHeatmap(this, map, measurements);
+        gridUtils.drawHeatmap(this, map, measurements.values());
       } catch (ParseException e) {
         throw new RuntimeException(e);
       }
@@ -297,5 +281,22 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     locationHandler.setLocationPermissionGranted(true);
     locationHandler.start();
     sampler.start();
+  }
+
+  private void stopHandlers() {
+    locationHandler.stop();
+    sampler.stop();
+  }
+
+  private void disableUIInteraction() {
+    FloatingActionButton recordBtn = binding.record;
+    recordBtn.setEnabled(false);
+    recordBtn.setAlpha(0.5f);
+  }
+
+  private void enableUIInteraction() {
+    FloatingActionButton recordBtn = binding.record;
+    recordBtn.setEnabled(true);
+    recordBtn.setAlpha(1.0f);
   }
 }

@@ -7,8 +7,6 @@ import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.util.Log;
 
-import java.util.Arrays;
-
 import io.gejsi.pufferfish.models.MeasurementSampler;
 
 public class AudioHandler extends MeasurementSampler {
@@ -43,7 +41,7 @@ public class AudioHandler extends MeasurementSampler {
         }
         // root-mean-square (RMS) value of the audio data,
         // which is a measure of the average power of the signal
-        double rms = numRead != 0 ? Math.sqrt(sum / numRead) : 0;
+        double rms = numRead != 0 ? Math.sqrt(sum / (float) numRead) : 0;
 
         float airPressure = 20.0f;
         // decibels
@@ -51,8 +49,7 @@ public class AudioHandler extends MeasurementSampler {
 
         double[] data = this.getData();
         data[n % averageLength] = db;
-        Log.d("Test", "start: " + db);
-        Log.d("Test", "start: " + Arrays.toString(data));
+        Log.d("Test", "start (" + Thread.currentThread().getName() + "): " + db);
       }
     }).start();
   }

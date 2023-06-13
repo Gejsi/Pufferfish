@@ -14,15 +14,16 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import io.gejsi.pufferfish.models.Measurement;
 
 public class HeatmapUtils {
-  public static void saveHeatmap(Activity activity, Measurement.Type measurementType, List<Measurement> measurements) {
+  public static void saveHeatmap(Activity activity, Measurement.Type measurementType, Collection<Measurement> measurements) {
     if (measurements.isEmpty()) {
       Toast.makeText(activity, "No measurements have been taken yet. Cannot save the heatmap.", Toast.LENGTH_SHORT).show();
       return;
@@ -71,7 +72,7 @@ public class HeatmapUtils {
     }
   }
 
-  public static List<Measurement> loadHeatmap(Activity activity, String fileName) {
+  public static Map<String, Measurement> loadHeatmap(Activity activity, String fileName) {
     try {
       File file = new File(activity.getFilesDir(), fileName);
       InputStreamReader inputStreamReader = new InputStreamReader(new FileInputStream(file));
@@ -89,13 +90,13 @@ public class HeatmapUtils {
       JSONArray measurementsArray = rootObject.getJSONArray("measurements");
 
       // Iterate over the JSON array and create Measurement objects
-      List<Measurement> measurements = new ArrayList<>();
+      Map<String, Measurement> measurements = new HashMap<>();
       for (int i = 0; i < measurementsArray.length(); i++) {
         JSONObject measurementObject = measurementsArray.getJSONObject(i);
         String coordinate = measurementObject.getString("coordinate");
         Measurement.Type type = Measurement.Type.valueOf(measurementObject.getString("type"));
         Measurement.Intensity intensity = Measurement.Intensity.valueOf(measurementObject.getString("intensity"));
-        measurements.add(new Measurement(coordinate, type, intensity));
+        measurements.put(coordinate, new Measurement(coordinate, type, intensity));
       }
 
       return measurements;

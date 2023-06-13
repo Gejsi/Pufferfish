@@ -1,5 +1,6 @@
 package io.gejsi.pufferfish.handlers;
 
+import android.app.Activity;
 import android.content.SharedPreferences;
 
 import androidx.appcompat.app.AlertDialog;
@@ -12,11 +13,11 @@ import com.google.android.gms.maps.model.PolygonOptions;
 
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.gejsi.pufferfish.controllers.MapsActivity;
 import io.gejsi.pufferfish.models.Measurement;
 import mil.nga.mgrs.MGRS;
 
@@ -24,7 +25,7 @@ public class GridUtils {
   private Map<String, Polygon> polygons = new HashMap<>();
   private Map<String, Long> timestamps = new HashMap<>();
 
-  public void fillTile(MapsActivity activity, GoogleMap map, Measurement measurement) throws ParseException {
+  public void fillTile(Activity activity, GoogleMap map, Measurement measurement) throws ParseException {
     String coordinate = measurement.getCoordinate();
     Measurement.Intensity intensity = measurement.getIntensity();
     int timePreference = getTimePreference(activity);
@@ -62,13 +63,13 @@ public class GridUtils {
     }
   }
 
-  public void drawHeatmap(MapsActivity activity, GoogleMap map, List<Measurement> measurements) throws ParseException {
+  public void drawHeatmap(Activity activity, GoogleMap map, Collection<Measurement> measurements) throws ParseException {
     for (Measurement measurement : measurements) {
       this.fillTile(activity, map, measurement);
     }
   }
 
-  private int getTimePreference(MapsActivity activity) {
+  private int getTimePreference(Activity activity) {
     SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity);
     String timePref = sharedPreferences.getString("time", "");
     int time = timePref.length() == 0 ? 5 : Integer.parseInt(timePref);

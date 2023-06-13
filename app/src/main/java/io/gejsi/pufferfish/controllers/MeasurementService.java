@@ -4,7 +4,10 @@ import android.app.Service;
 import android.content.Intent;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.util.Log;
+import android.widget.Toast;
 
 import io.gejsi.pufferfish.handlers.AudioHandler;
 import io.gejsi.pufferfish.handlers.LocationUtils;
@@ -14,12 +17,13 @@ import io.gejsi.pufferfish.models.Measurement;
 import io.gejsi.pufferfish.models.MeasurementSampler;
 
 public class MeasurementService extends Service {
-  public static boolean isServiceRunning = false;
   private LocationUtils locationUtils;
 
   private Measurement.Type measurementType = Measurement.Type.Noise;
 
   private MeasurementSampler sampler;
+  private Handler handler;
+  private Runnable measurementRunnable;
 
   @Override
   public int onStartCommand(Intent intent, int flags, int startId) {
@@ -32,21 +36,16 @@ public class MeasurementService extends Service {
     locationUtils = new LocationUtils(this) {
       @Override
       public void onChangedLocation(Location location) {
-
       }
 
       @Override
       public void onChangedStatus(String provider, int status, Bundle extras) {
-
       }
 
       @Override
       public void onDisabledProvider(String provider) {
-
       }
     };
-
-    isServiceRunning = true;
 
     if (measurementType == Measurement.Type.Noise) {
       sampler = new AudioHandler(this.getApplicationContext());
@@ -56,24 +55,37 @@ public class MeasurementService extends Service {
       sampler = new LteHandler(this.getApplicationContext());
     }
 
-    if (isServiceRunning) {
-      locationUtils.startLocationUpdates();
-      sampler.start();
-    }
+    startMeasurementThread();
 
     return super.onStartCommand(intent, flags, startId);
   }
 
-  public static void stopService() {
-    isServiceRunning = false;
+  private void startMeasurementThread() {
+    Toast.makeText(this, "Started background monitoring.", Toast.LENGTH_SHORT).show();
+    handler = new Handler();
+    measurementRunnable = new Runnable() {
+      @Override
+      public void run() {
+        Log.d("Test", "measurement taken (" + Thread.currentThread().getName() + "): ");
+
+        handler.postDelayed(this, 2000);
+      }
+    };
+
+    handler.post(measurementRunnable);
+  }
+
+  private void stopMeasurementThread() {
+    if (handler != null && measurementRunnable != null) {
+      handler.removeCallbacks(measurementRunnable);
+    }
   }
 
   @Override
   public void onDestroy() {
     super.onDestroy();
-    stopService();
-    locationUtils.stopLocationUpdates();
-    sampler.stop();
+    Toast.makeText(this, "Stopped background monitoring.", Toast.LENGTH_SHORT).show();
+    stopMeasurementThread();
   }
 
   @Override

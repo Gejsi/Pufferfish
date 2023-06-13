@@ -18,17 +18,13 @@ import java.util.stream.Collectors;
 
 import io.gejsi.pufferfish.R;
 import io.gejsi.pufferfish.databinding.ActivityMainBinding;
-import io.gejsi.pufferfish.handlers.HeatmapUtils;
-import io.gejsi.pufferfish.models.Measurement;
 
 public class MainActivity extends AppCompatActivity {
-  private ActivityMainBinding binding;
-
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    binding = ActivityMainBinding.inflate(getLayoutInflater());
+    ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
     setContentView(binding.getRoot());
 
     Toolbar toolbar = binding.toolbar;
@@ -119,10 +115,6 @@ public class MainActivity extends AppCompatActivity {
     };
 
     heatmapListView.setOnItemClickListener(dialogHandler);
-  }
-
-  private List<Measurement> loadHeatmap(String fileName) {
-    return HeatmapUtils.loadHeatmap(this, fileName);
   }
 
   private void deleteHeatmap(String fileName) {

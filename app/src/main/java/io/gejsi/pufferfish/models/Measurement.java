@@ -1,5 +1,7 @@
 package io.gejsi.pufferfish.models;
 
+import androidx.annotation.NonNull;
+
 public class Measurement {
   private String coordinate;
   private Type type;
@@ -35,8 +37,18 @@ public class Measurement {
     return intensity;
   }
 
-  public void setIntensity(Intensity intensity) {
-    this.intensity = intensity;
+  public void setIntensity(double data) {
+    if (type == Type.Noise) {
+      if (data < 10) intensity = Intensity.Good;
+      else if (data >= 10 && data <= 30) intensity = Intensity.Average;
+      else intensity = Intensity.Poor;
+    } else if (type == Type.WiFi || type == Type.LTE) {
+      if (data >= 3) intensity = Intensity.Good;
+      else if (data == 2) intensity = Intensity.Average;
+      else intensity = Intensity.Poor;
+    } else {
+      throw new IllegalArgumentException("Cannot set intensity since no measurement type has been provided.");
+    }
   }
 
   public enum Intensity {
@@ -51,6 +63,7 @@ public class Measurement {
     LTE
   }
 
+  @NonNull
   @Override
   public String toString() {
     return "Measurement{" +
