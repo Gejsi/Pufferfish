@@ -1,7 +1,6 @@
 package io.gejsi.pufferfish.controllers;
 
 import android.Manifest;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.widget.Button;
@@ -26,6 +25,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.gejsi.pufferfish.R;
@@ -113,45 +114,23 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     FloatingActionButton backgroundBtn = binding.background;
     TooltipCompat.setTooltipText(backgroundBtn, "Save measurements in background");
     AtomicBoolean isBackgroundModeEnabled = new AtomicBoolean(false);
-    Intent serviceIntent = new Intent(this, MeasurementService.class);
-    serviceIntent.putExtra("measurementType", measurementType.toString());
     backgroundBtn.setOnClickListener(view -> {
       if (isBackgroundModeEnabled.get()) {
         enableUIInteraction();
-        startHandlers();
-        stopService(serviceIntent);
-        isBackgroundModeEnabled.set(false);
+        stopBackgroundRecording();
       } else {
         disableUIInteraction();
-        stopHandlers();
-        startService(serviceIntent);
-        isBackgroundModeEnabled.set(true);
+        startBackgroundRecording();
       }
+
+      // toggle background mode
+      isBackgroundModeEnabled.set(!isBackgroundModeEnabled.get());
     });
 
     FloatingActionButton recordBtn = binding.record;
     TooltipCompat.setTooltipText(recordBtn, "Save measurement");
     recordBtn.setOnClickListener(view -> {
-      double lat = locationHandler.getLastKnownLocation().getLatitude();
-      double lng = locationHandler.getLastKnownLocation().getLongitude();
-      MGRS mgrs = tileProvider.getMGRS(new LatLng(lat, lng));
-      String coordinate = mgrs.coordinate(GridType.TEN_METER);
-
-      Measurement measurement = new Measurement(coordinate);
-      measurement.setType(measurementType);
-      measurement.setIntensity(sampler.getAverageData());
-
-      try {
-        gridUtils.fillTile(this, map, measurement);
-      } catch (ParseException e) {
-        throw new RuntimeException(e);
-      }
-
-      if (measurements.containsKey(measurement.getCoordinate())) {
-        measurements.replace(measurement.getCoordinate(), measurement);
-      } else {
-        measurements.put(measurement.getCoordinate(), measurement);
-      }
+      recordMeasurement();
     });
 
     // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -166,6 +145,25 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     grids.enableAllLabelers();
   }
 
+  private Timer backgroundRecordingTimer;
+
+  private void startBackgroundRecording() {
+    TimerTask backgroundRecordingTask = new TimerTask() {
+      @Override
+      public void run() {
+        recordMeasurement();
+      }
+    };
+
+    // Schedule the background recording task to run every n minutes
+    backgroundRecordingTimer = new Timer();
+    backgroundRecordingTimer.scheduleAtFixedRate(backgroundRecordingTask, 0, 2000);
+  }
+
+  private void stopBackgroundRecording() {
+    backgroundRecordingTimer.cancel();
+  }
+
   @Override
   protected void onPause() {
     super.onPause();
@@ -177,7 +175,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     super.onDestroy();
     locationHandler.stop();
     sampler.stop();
-    // if (measurementService.isServiceRunning()) measurementService.stopMan();
   }
 
   /**
@@ -210,6 +207,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     // add MGRS grid
     map.addTileOverlay(new TileOverlayOptions().tileProvider(tileProvider));
+
     // draw an initial map if measurements are coming from an existing heatmap
     if (!measurements.isEmpty()) {
       try {
@@ -298,5 +296,30 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     FloatingActionButton recordBtn = binding.record;
     recordBtn.setEnabled(true);
     recordBtn.setAlpha(1.0f);
+  }
+
+  private void recordMeasurement() {
+    runOnUiThread(() -> {
+      double lat = locationHandler.getLastKnownLocation().getLatitude();
+      double lng = locationHandler.getLastKnownLocation().getLongitude();
+      MGRS mgrs = tileProvider.getMGRS(new LatLng(lat, lng));
+      String coordinate = mgrs.coordinate(GridType.TEN_METER);
+
+      Measurement measurement = new Measurement(coordinate);
+      measurement.setType(measurementType);
+      measurement.setIntensity(sampler.getAverageData());
+
+      try {
+        gridUtils.fillTile(this, map, measurement);
+      } catch (ParseException e) {
+        throw new RuntimeException(e);
+      }
+
+      if (measurements.containsKey(measurement.getCoordinate())) {
+        measurements.replace(measurement.getCoordinate(), measurement);
+      } else {
+        measurements.put(measurement.getCoordinate(), measurement);
+      }
+    });
   }
 }
