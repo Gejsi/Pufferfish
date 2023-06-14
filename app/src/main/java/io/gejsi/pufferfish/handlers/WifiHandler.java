@@ -19,7 +19,7 @@ public class WifiHandler extends MeasurementSampler {
     WifiManager wifiManager = (WifiManager) this.getContext().getSystemService(Context.WIFI_SERVICE);
 
     this.setRecording(true);
-    int averageLength = this.getAverageLengthPreference();
+    int averageLength = SettingsUtils.getAverageLengthPreference(getContext());
     this.setData(new double[averageLength]);
 
     new Thread(() -> {

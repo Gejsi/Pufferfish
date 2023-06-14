@@ -1,10 +1,8 @@
 package io.gejsi.pufferfish.handlers;
 
 import android.app.Activity;
-import android.content.SharedPreferences;
 
 import androidx.appcompat.app.AlertDialog;
-import androidx.preference.PreferenceManager;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
@@ -28,7 +26,7 @@ public class GridUtils {
   public void fillTile(Activity activity, GoogleMap map, Measurement measurement) throws ParseException {
     String coordinate = measurement.getCoordinate();
     Measurement.Intensity intensity = measurement.getIntensity();
-    int timePreference = getTimePreference(activity);
+    int timePreference = SettingsUtils.getTimePreference(activity);
 
     // check if enough time has passed since last fill
     long currentTime = System.currentTimeMillis();
@@ -67,14 +65,6 @@ public class GridUtils {
     for (Measurement measurement : measurements) {
       this.fillTile(activity, map, measurement);
     }
-  }
-
-  private int getTimePreference(Activity activity) {
-    SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity);
-    String timePref = sharedPreferences.getString("time", "");
-    int time = timePref.length() == 0 ? 5 : Integer.parseInt(timePref);
-
-    return time * 1000;
   }
 
   private List<LatLng> getTileVertices(String coordinate) throws ParseException {

@@ -5,7 +5,6 @@ import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
-import android.util.Log;
 
 import io.gejsi.pufferfish.models.MeasurementSampler;
 
@@ -29,7 +28,7 @@ public class AudioHandler extends MeasurementSampler {
     audioRecord.startRecording();
 
     this.setRecording(true);
-    int averageLength = this.getAverageLengthPreference();
+    int averageLength = SettingsUtils.getAverageLengthPreference(getContext());
     this.setData(new double[averageLength]);
 
     new Thread(() -> {
@@ -49,7 +48,6 @@ public class AudioHandler extends MeasurementSampler {
 
         double[] data = this.getData();
         data[n % averageLength] = db;
-        Log.d("Test", "start (" + Thread.currentThread().getName() + "): " + db);
       }
     }).start();
   }

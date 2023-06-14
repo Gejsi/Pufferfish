@@ -12,16 +12,13 @@ public abstract class LocationUtils {
   private static final long MIN_TIME_INTERVAL = 1000; // Minimum time interval in milliseconds
   private static final float MIN_DISTANCE_INTERVAL = 1; // Minimum distance interval in meters
 
-  private LocationManager locationManager;
-  private LocationListener locationListener;
-  private Context context;
+  private final LocationManager locationManager;
+  private final LocationListener locationListener;
 
   // The geographical location where the device is currently located.
   private Location lastKnownLocation;
 
   public LocationUtils(Context context) {
-    this.context = context;
-
     locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
 
     try {
@@ -35,7 +32,6 @@ public abstract class LocationUtils {
       public void onLocationChanged(Location location) {
         Log.d("Location", "Location changed" + location);
         lastKnownLocation = location;
-        onChangedLocation(location);
       }
 
       @Override
@@ -52,7 +48,6 @@ public abstract class LocationUtils {
     };
   }
 
-  public abstract void onChangedLocation(Location location);
   public abstract void onChangedStatus(String provider, int status, Bundle extras);
   public abstract void onDisabledProvider(String provider);
 

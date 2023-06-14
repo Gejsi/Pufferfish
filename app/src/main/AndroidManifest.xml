@@ -17,11 +17,6 @@
         android:theme="@style/Theme.Pufferfish.NoActionBar"
         tools:targetApi="31">
 
-        <service
-            android:name=".controllers.MeasurementService"
-            android:enabled="true"
-            android:exported="false" />
-
         <activity
             android:name=".controllers.MainActivity"
             android:exported="true"

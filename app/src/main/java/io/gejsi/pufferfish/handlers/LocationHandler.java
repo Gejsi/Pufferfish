@@ -20,21 +20,16 @@ public class LocationHandler {
     this.locationPermissionGranted = locationPermissionGranted;
   }
 
-  private LocationUtils locationUtils;
+  private final LocationUtils locationUtils;
 
-  private Activity activity;
-  private GoogleMap map;
+  private final Activity activity;
+  private final GoogleMap map;
 
   public LocationHandler(Activity mapsActivity, GoogleMap googleMap) {
     this.activity = mapsActivity;
     this.map = googleMap;
 
     locationUtils = new LocationUtils(mapsActivity) {
-      @Override
-      public void onChangedLocation(Location location) {
-        // getDeviceLocation();
-      }
-
       @Override
       public void onChangedStatus(String provider, int status, Bundle extras) {
         if (status == LocationProvider.OUT_OF_SERVICE) {

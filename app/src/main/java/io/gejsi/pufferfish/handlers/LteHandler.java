@@ -21,7 +21,7 @@ public class LteHandler extends MeasurementSampler {
     TelephonyManager telephonyManager = (TelephonyManager) this.getContext().getSystemService(Context.TELEPHONY_SERVICE);
 
     this.setRecording(true);
-    int averageLength = this.getAverageLengthPreference();
+    int averageLength = SettingsUtils.getAverageLengthPreference(getContext());
     this.setData(new double[averageLength]);
 
     new Thread(() -> {

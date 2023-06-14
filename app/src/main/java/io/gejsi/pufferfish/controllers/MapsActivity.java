@@ -36,6 +36,7 @@ import io.gejsi.pufferfish.handlers.GridUtils;
 import io.gejsi.pufferfish.handlers.HeatmapUtils;
 import io.gejsi.pufferfish.handlers.LocationHandler;
 import io.gejsi.pufferfish.handlers.LteHandler;
+import io.gejsi.pufferfish.handlers.SettingsUtils;
 import io.gejsi.pufferfish.handlers.WifiHandler;
 import io.gejsi.pufferfish.models.Measurement;
 import io.gejsi.pufferfish.models.MeasurementSampler;
@@ -68,6 +69,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   private MGRSTileProvider tileProvider;
 
   private GridUtils gridUtils;
+  private Timer backgroundRecordingTimer;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -145,24 +147,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     grids.enableAllLabelers();
   }
 
-  private Timer backgroundRecordingTimer;
-
-  private void startBackgroundRecording() {
-    TimerTask backgroundRecordingTask = new TimerTask() {
-      @Override
-      public void run() {
-        recordMeasurement();
-      }
-    };
-
-    // Schedule the background recording task to run every n minutes
-    backgroundRecordingTimer = new Timer();
-    backgroundRecordingTimer.scheduleAtFixedRate(backgroundRecordingTask, 0, 2000);
-  }
-
-  private void stopBackgroundRecording() {
-    backgroundRecordingTimer.cancel();
-  }
 
   @Override
   protected void onPause() {
@@ -281,11 +265,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     sampler.start();
   }
 
-  private void stopHandlers() {
-    locationHandler.stop();
-    sampler.stop();
-  }
-
   private void disableUIInteraction() {
     FloatingActionButton recordBtn = binding.record;
     recordBtn.setEnabled(false);
@@ -299,27 +278,44 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   }
 
   private void recordMeasurement() {
-    runOnUiThread(() -> {
-      double lat = locationHandler.getLastKnownLocation().getLatitude();
-      double lng = locationHandler.getLastKnownLocation().getLongitude();
-      MGRS mgrs = tileProvider.getMGRS(new LatLng(lat, lng));
-      String coordinate = mgrs.coordinate(GridType.TEN_METER);
+    double lat = locationHandler.getLastKnownLocation().getLatitude();
+    double lng = locationHandler.getLastKnownLocation().getLongitude();
+    MGRS mgrs = tileProvider.getMGRS(new LatLng(lat, lng));
+    String coordinate = mgrs.coordinate(GridType.TEN_METER);
 
-      Measurement measurement = new Measurement(coordinate);
-      measurement.setType(measurementType);
-      measurement.setIntensity(sampler.getAverageData());
+    Measurement measurement = new Measurement(coordinate);
+    measurement.setType(measurementType);
+    measurement.setIntensity(sampler.getAverageData());
 
-      try {
-        gridUtils.fillTile(this, map, measurement);
-      } catch (ParseException e) {
-        throw new RuntimeException(e);
+    try {
+      gridUtils.fillTile(this, map, measurement);
+    } catch (ParseException e) {
+      throw new RuntimeException(e);
+    }
+
+    if (measurements.containsKey(measurement.getCoordinate())) {
+      measurements.replace(measurement.getCoordinate(), measurement);
+    } else {
+      measurements.put(measurement.getCoordinate(), measurement);
+    }
+  }
+
+  private void startBackgroundRecording() {
+    TimerTask backgroundRecordingTask = new TimerTask() {
+      @Override
+      public void run() {
+        runOnUiThread(() -> recordMeasurement());
       }
+    };
 
-      if (measurements.containsKey(measurement.getCoordinate())) {
-        measurements.replace(measurement.getCoordinate(), measurement);
-      } else {
-        measurements.put(measurement.getCoordinate(), measurement);
-      }
-    });
+    // Schedule the background recording task to run every n minutes
+    int timePreference = SettingsUtils.getTimePreference(this);
+    int backgroundTimePreference = SettingsUtils.getBackgroundTimePreference(this);
+    backgroundRecordingTimer = new Timer();
+    backgroundRecordingTimer.scheduleAtFixedRate(backgroundRecordingTask, 0, Math.max(backgroundTimePreference, timePreference));
+  }
+
+  private void stopBackgroundRecording() {
+    backgroundRecordingTimer.cancel();
   }
 }
