@@ -26,7 +26,7 @@
                 android:layout_height="wrap_content"
                 android:src="@drawable/ic_settings"
                 android:padding="8dp"
-                android:layout_marginRight="8dp"
+                android:layout_marginEnd="8dp"
                 android:background="?attr/selectableItemBackground"
                 android:layout_gravity="end"/>
         </androidx.appcompat.widget.Toolbar>
@@ -37,12 +37,24 @@
     <include layout="@layout/content_scrolling" android:id="@+id/content" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/background"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="88dp"
+        android:src="@drawable/ic_record_background"
+        app:layout_anchor="@id/content"
+        app:layout_anchorGravity="bottom|end"
+        android:contentDescription="@string/create_a_heatmap_in_background" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
         android:src="@android:drawable/ic_input_add"
         app:layout_anchor="@id/content"
-        app:layout_anchorGravity="bottom|end"/>
+        app:layout_anchorGravity="bottom|end"
+        android:contentDescription="@string/create_a_heatmap" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

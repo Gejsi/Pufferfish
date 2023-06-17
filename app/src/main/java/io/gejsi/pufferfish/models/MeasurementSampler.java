@@ -1,9 +1,6 @@
 package io.gejsi.pufferfish.models;
 
 import android.content.Context;
-import android.content.SharedPreferences;
-
-import androidx.preference.PreferenceManager;
 
 public abstract class MeasurementSampler {
   private boolean isRecording = false;
@@ -49,11 +46,5 @@ public abstract class MeasurementSampler {
     }
 
     return sum / data.length;
-  }
-
-  protected int getAverageLengthPreference() {
-    SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-    String averagePref = sharedPreferences.getString("average", "");
-    return averagePref.length() == 0 ? 10 : Integer.parseInt(averagePref);
   }
 }

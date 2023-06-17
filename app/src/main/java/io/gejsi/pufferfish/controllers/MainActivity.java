@@ -30,28 +30,11 @@ public class MainActivity extends AppCompatActivity {
     Toolbar toolbar = binding.toolbar;
     setSupportActionBar(toolbar);
 
+    FloatingActionButton backgroundFab = binding.background;
+    backgroundFab.setOnClickListener(v -> showDialog("Select the type of background measurement you want to perform", new Intent(MainActivity.this, BackgroundActivity.class)));
+
     FloatingActionButton fab = binding.fab;
-    fab.setOnClickListener(view -> {
-      AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-      builder.setTitle("Select the type of measurement you want to perform");
-
-      // Define the list of measurement types
-      String[] measurementTypes = {"Noise", "WiFi", "LTE"};
-
-      // Set the radio buttons for the measurement types
-      builder.setSingleChoiceItems(measurementTypes, -1, (dialog, which) -> {
-        String selectedMeasurementType = measurementTypes[which];
-
-        Intent intent = new Intent(MainActivity.this, MapsActivity.class);
-        intent.putExtra("measurementType", selectedMeasurementType);
-        startActivity(intent);
-
-        dialog.dismiss();
-      });
-
-      AlertDialog dialog = builder.create();
-      dialog.show();
-    });
+    fab.setOnClickListener(v -> showDialog("Select the type of measurement you want to perform", new Intent(MainActivity.this, MapsActivity.class)));
 
     ImageButton settingsButton = binding.settingsButton;
     settingsButton.setOnClickListener(view -> {
@@ -119,5 +102,26 @@ public class MainActivity extends AppCompatActivity {
 
   private void deleteHeatmap(String fileName) {
     this.deleteFile(fileName);
+  }
+
+  private void showDialog(String title, Intent intent) {
+    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+    builder.setTitle(title);
+
+    // Define the list of measurement types
+    String[] measurementTypes = {"Noise", "WiFi", "LTE"};
+
+    // Set the radio buttons for the measurement types
+    builder.setSingleChoiceItems(measurementTypes, -1, (dialog, which) -> {
+      String selectedMeasurementType = measurementTypes[which];
+
+      intent.putExtra("measurementType", selectedMeasurementType);
+      startActivity(intent);
+
+      dialog.dismiss();
+    });
+
+    AlertDialog dialog = builder.create();
+    dialog.show();
   }
 }

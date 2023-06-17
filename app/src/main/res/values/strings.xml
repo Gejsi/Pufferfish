@@ -117,4 +117,7 @@
     <string name="get_current_location">Get current location</string>
     <string name="record_measurements_in_background">Record measurements in background</string>
     <string name="record_measurement">Record measurement</string>
+    <string name="create_a_heatmap">Create a heatmap</string>
+    <string name="create_a_heatmap_in_background">Create a heatmap in background</string>
+    <string name="start_recording_measurements">Start recording measurements</string>
 </resources>
