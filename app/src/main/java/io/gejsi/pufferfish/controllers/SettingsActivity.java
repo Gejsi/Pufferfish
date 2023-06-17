@@ -31,10 +31,6 @@ public class SettingsActivity extends AppCompatActivity {
       EditTextPreference timePref = findPreference("time");
       if (timePref != null)
         timePref.setOnBindEditTextListener(editText -> editText.setInputType(InputType.TYPE_CLASS_NUMBER));
-
-      EditTextPreference backgroundPref = findPreference("background");
-      if (backgroundPref != null)
-        backgroundPref.setOnBindEditTextListener(editText -> editText.setInputType(InputType.TYPE_CLASS_NUMBER));
     }
   }
 }

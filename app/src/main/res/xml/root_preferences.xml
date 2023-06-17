@@ -1,6 +1,6 @@
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <PreferenceCategory app:title="@string/messages_header">
+    <PreferenceCategory app:title="General">
 
         <EditTextPreference
             app:defaultValue="5"
@@ -12,12 +12,6 @@
             app:defaultValue="5"
             app:key="time"
             app:title="Time interval between active measurements (in seconds)"
-            app:useSimpleSummaryProvider="true" />
-
-        <EditTextPreference
-            app:defaultValue="2"
-            app:key="background"
-            app:title="Time interval between background measurements (in seconds)"
             app:useSimpleSummaryProvider="true" />
 
         <ListPreference

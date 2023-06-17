@@ -19,12 +19,4 @@ public class SettingsUtils {
 
     return time * 1000;
   }
-
-  public static int getBackgroundTimePreference(Context context) {
-    SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-    String backgroundTimePref = sharedPreferences.getString("background", "");
-    int time = backgroundTimePref.length() == 0 ? 2 : Integer.parseInt(backgroundTimePref);
-
-    return time * 1000;
-  }
 }

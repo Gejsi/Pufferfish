@@ -310,9 +310,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     // Schedule the background recording task to run every n minutes
     int timePreference = SettingsUtils.getTimePreference(this);
-    int backgroundTimePreference = SettingsUtils.getBackgroundTimePreference(this);
     backgroundRecordingTimer = new Timer();
-    backgroundRecordingTimer.scheduleAtFixedRate(backgroundRecordingTask, 0, Math.max(backgroundTimePreference, timePreference));
+    backgroundRecordingTimer.scheduleAtFixedRate(backgroundRecordingTask, 0, timePreference == 0 ? 2000 : timePreference);
   }
 
   private void stopBackgroundRecording() {
