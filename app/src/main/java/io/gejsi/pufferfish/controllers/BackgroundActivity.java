@@ -6,6 +6,7 @@ import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 
 import io.gejsi.pufferfish.databinding.ActivityBackgroundBinding;
+import io.gejsi.pufferfish.handlers.LocationUtils;
 import io.gejsi.pufferfish.models.Measurement;
 
 public class BackgroundActivity extends AppCompatActivity {
@@ -25,9 +26,22 @@ public class BackgroundActivity extends AppCompatActivity {
     Intent intent = new Intent(this, BackgroundIntentService.class);
     intent.putExtra("measurementType", measurementType.toString());
 
+    LocationUtils locationUtils = new LocationUtils(this) {
+      @Override
+      public void onChangedStatus(String provider, int status, Bundle extras) {
+      }
+
+      @Override
+      public void onDisabledProvider(String provider) {
+      }
+    };
+
     binding.toggle.setOnCheckedChangeListener((buttonView, isChecked) -> {
       if (isChecked) {
+        locationUtils.startLocationUpdates();
         startService(intent);
+      } else {
+        locationUtils.stopLocationUpdates();
       }
 
       BackgroundIntentService.shouldContinue = isChecked;

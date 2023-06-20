@@ -71,7 +71,6 @@
 
             </RelativeLayout>
 
-
         </ScrollView>
 
     </androidx.appcompat.widget.LinearLayoutCompat>
