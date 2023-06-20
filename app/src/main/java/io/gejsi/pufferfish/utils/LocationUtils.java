@@ -1,4 +1,4 @@
-package io.gejsi.pufferfish.handlers;
+package io.gejsi.pufferfish.utils;
 
 import android.annotation.SuppressLint;
 import android.content.Context;

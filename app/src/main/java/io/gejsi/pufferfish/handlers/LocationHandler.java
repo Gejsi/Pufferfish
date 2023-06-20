@@ -11,6 +11,8 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
 
+import io.gejsi.pufferfish.utils.LocationUtils;
+
 public class LocationHandler {
   private static final int DEFAULT_ZOOM = 20;
 

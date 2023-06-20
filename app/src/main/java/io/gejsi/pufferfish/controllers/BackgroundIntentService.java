@@ -6,7 +6,7 @@ import android.os.Bundle;
 import android.util.Log;
 
 import io.gejsi.pufferfish.handlers.AudioHandler;
-import io.gejsi.pufferfish.handlers.LocationUtils;
+import io.gejsi.pufferfish.utils.LocationUtils;
 import io.gejsi.pufferfish.handlers.LteHandler;
 import io.gejsi.pufferfish.handlers.WifiHandler;
 import io.gejsi.pufferfish.models.Measurement;

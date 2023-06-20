@@ -2,12 +2,8 @@ package io.gejsi.pufferfish.controllers;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.Button;
 
 import androidx.annotation.NonNull;
@@ -16,8 +12,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.appcompat.widget.TooltipCompat;
 import androidx.core.app.ActivityCompat;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 
 import com.google.android.gms.maps.GoogleMap;
@@ -39,14 +33,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.gejsi.pufferfish.R;
 import io.gejsi.pufferfish.databinding.ActivityMapsBinding;
 import io.gejsi.pufferfish.handlers.AudioHandler;
-import io.gejsi.pufferfish.handlers.GridUtils;
-import io.gejsi.pufferfish.handlers.HeatmapUtils;
 import io.gejsi.pufferfish.handlers.LocationHandler;
 import io.gejsi.pufferfish.handlers.LteHandler;
-import io.gejsi.pufferfish.handlers.SettingsUtils;
 import io.gejsi.pufferfish.handlers.WifiHandler;
 import io.gejsi.pufferfish.models.Measurement;
 import io.gejsi.pufferfish.models.MeasurementSampler;
+import io.gejsi.pufferfish.utils.GridUtils;
+import io.gejsi.pufferfish.utils.HeatmapUtils;
+import io.gejsi.pufferfish.utils.NotificationUtils;
+import io.gejsi.pufferfish.utils.SettingsUtils;
 import mil.nga.color.Color;
 import mil.nga.mgrs.MGRS;
 import mil.nga.mgrs.grid.GridType;
@@ -65,7 +60,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   private Measurement.Type measurementType = Measurement.Type.Noise;
 
   public static final int PERMISSIONS_REQUEST_CODE = 1;
-  public static final String[] PERMISSIONS_REQUIRED = {Manifest.permission.ACCESS_FINE_LOCATION,
+  @SuppressLint("InlinedApi")
+  public static final String[] PERMISSIONS_REQUIRED = {
+          Manifest.permission.ACCESS_FINE_LOCATION,
           Manifest.permission.ACCESS_COARSE_LOCATION,
           Manifest.permission.RECORD_AUDIO,
           Manifest.permission.ACCESS_WIFI_STATE,
@@ -82,6 +79,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
   private GridUtils gridUtils;
   private Timer backgroundRecordingTimer;
+  private NotificationUtils notificationUtils;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -124,6 +122,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     loc.setOnClickListener(view -> locationHandler.getDeviceLocation());
 
     gridUtils = new GridUtils();
+    notificationUtils = new NotificationUtils(this);
 
     FloatingActionButton backgroundBtn = binding.background;
     TooltipCompat.setTooltipText(backgroundBtn, "Save measurements in background");
@@ -158,7 +157,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     tileProvider = MGRSTileProvider.create(this, grids);
     grids.enableAllLabelers();
   }
-
 
   @Override
   protected void onPause() {
@@ -215,7 +213,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     requestPermissions();
-    createNotificationChannel();
+    notificationUtils.createNotificationChannel();
   }
 
   // Call this method to request permissions
@@ -317,47 +315,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
   }
 
-  private final String CHANNEL_ID = "booo";
-
-  private void createNotificationChannel() {
-    // Create the NotificationChannel, but only on API 26+ because
-    // the NotificationChannel class is new and not in the support library
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      CharSequence name = "BoooName";
-      String description = "BoooDesc";
-      int importance = NotificationManager.IMPORTANCE_DEFAULT;
-      NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
-      channel.setDescription(description);
-      // Register the channel with the system; you can't change the importance
-      // or other notification behaviors after this
-      NotificationManager notificationManager = getSystemService(NotificationManager.class);
-      notificationManager.createNotificationChannel(channel);
-    }
-  }
-
-
-  @SuppressLint("MissingPermission")
-  private void sendNotification() {
-    NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher_round)
-            .setContentTitle("My notification")
-            .setContentText("Much longer text that cannot fit one line...")
-            .setStyle(new NotificationCompat.BigTextStyle()
-                    .bigText("Much longer text that cannot fit one line..."))
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT);
-
-    NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
-    notificationManager.notify(0, builder.build());
-  }
-
-  private void startBackgroundRecording() {
+  public void startBackgroundRecording() {
     TimerTask backgroundRecordingTask = new TimerTask() {
       @Override
       public void run() {
-        Log.d("Run", "run: ");
         // send notifications if a tile hasn't been visited yet
         if (!measurements.containsKey(getCurrentCoordinate())) {
-          sendNotification();
+          notificationUtils.sendNotification();
         }
 
         runOnUiThread(() -> recordMeasurement());
@@ -369,7 +333,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     backgroundRecordingTimer.scheduleAtFixedRate(backgroundRecordingTask, 0, timePreference == 0 ? 2000 : timePreference);
   }
 
-  private void stopBackgroundRecording() {
+  public void stopBackgroundRecording() {
     if (backgroundRecordingTimer != null)
       backgroundRecordingTimer.cancel();
   }

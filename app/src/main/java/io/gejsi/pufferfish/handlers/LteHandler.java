@@ -10,6 +10,7 @@ import android.telephony.TelephonyManager;
 import java.util.List;
 
 import io.gejsi.pufferfish.models.MeasurementSampler;
+import io.gejsi.pufferfish.utils.SettingsUtils;
 
 public class LteHandler extends MeasurementSampler {
   public LteHandler(Context context) {

@@ -7,6 +7,7 @@ import android.media.AudioRecord;
 import android.media.MediaRecorder;
 
 import io.gejsi.pufferfish.models.MeasurementSampler;
+import io.gejsi.pufferfish.utils.SettingsUtils;
 
 public class AudioHandler extends MeasurementSampler {
   private AudioRecord audioRecord;

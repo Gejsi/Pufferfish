@@ -8,6 +8,7 @@ import android.net.wifi.WifiManager;
 import java.util.List;
 
 import io.gejsi.pufferfish.models.MeasurementSampler;
+import io.gejsi.pufferfish.utils.SettingsUtils;
 
 public class WifiHandler extends MeasurementSampler {
   public WifiHandler(Context context) {

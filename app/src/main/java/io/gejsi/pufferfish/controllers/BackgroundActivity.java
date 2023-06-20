@@ -6,7 +6,7 @@ import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 
 import io.gejsi.pufferfish.databinding.ActivityBackgroundBinding;
-import io.gejsi.pufferfish.handlers.LocationUtils;
+import io.gejsi.pufferfish.utils.LocationUtils;
 import io.gejsi.pufferfish.models.Measurement;
 
 public class BackgroundActivity extends AppCompatActivity {
