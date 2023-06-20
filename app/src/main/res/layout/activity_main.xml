@@ -37,17 +37,6 @@
     <include layout="@layout/content_scrolling" android:id="@+id/content" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/background"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="88dp"
-        android:src="@drawable/ic_record_background"
-        app:layout_anchor="@id/content"
-        app:layout_anchorGravity="bottom|end"
-        android:contentDescription="@string/create_a_heatmap_in_background" />
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

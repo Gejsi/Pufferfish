@@ -30,9 +30,6 @@ public class MainActivity extends AppCompatActivity {
     Toolbar toolbar = binding.toolbar;
     setSupportActionBar(toolbar);
 
-    FloatingActionButton backgroundFab = binding.background;
-    backgroundFab.setOnClickListener(v -> showDialog("Select the type of background measurement you want to perform", new Intent(MainActivity.this, BackgroundActivity.class)));
-
     FloatingActionButton fab = binding.fab;
     fab.setOnClickListener(v -> showDialog("Select the type of measurement you want to perform", new Intent(MainActivity.this, MapsActivity.class)));
 

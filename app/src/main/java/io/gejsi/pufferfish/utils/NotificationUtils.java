@@ -35,7 +35,7 @@ public class NotificationUtils {
     }
 
     builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_background)
+            .setSmallIcon(R.drawable.ic_record)
             .setContentTitle("New tile visited")
             .setStyle(new NotificationCompat.BigTextStyle()
                     .bigText("This tile has been visited for the first time and a new recording has been saved."))
