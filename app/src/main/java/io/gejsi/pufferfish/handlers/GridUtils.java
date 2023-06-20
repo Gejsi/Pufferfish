@@ -110,6 +110,6 @@ public class GridUtils {
       firstNumber++;
     }
 
-    return str.substring(0, 5) + String.valueOf(firstNumber) + String.valueOf(secondNumber);
+    return str.substring(0, 5) + firstNumber + secondNumber;
   }
 }

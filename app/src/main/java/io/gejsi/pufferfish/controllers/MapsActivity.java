@@ -1,8 +1,13 @@
 package io.gejsi.pufferfish.controllers;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 
 import androidx.annotation.NonNull;
@@ -11,6 +16,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.appcompat.widget.TooltipCompat;
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 
 import com.google.android.gms.maps.GoogleMap;
@@ -58,7 +65,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   private Measurement.Type measurementType = Measurement.Type.Noise;
 
   public static final int PERMISSIONS_REQUEST_CODE = 1;
-  public static final String[] PERMISSIONS_REQUIRED = {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.RECORD_AUDIO, Manifest.permission.ACCESS_WIFI_STATE};
+  public static final String[] PERMISSIONS_REQUIRED = {Manifest.permission.ACCESS_FINE_LOCATION,
+          Manifest.permission.ACCESS_COARSE_LOCATION,
+          Manifest.permission.RECORD_AUDIO,
+          Manifest.permission.ACCESS_WIFI_STATE,
+          Manifest.permission.POST_NOTIFICATIONS
+  };
 
   // Keys for storing activity state.
   public static final String KEY_LOCATION = "location";
@@ -151,7 +163,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   @Override
   protected void onPause() {
     super.onPause();
-    this.finish();
+    // this.finish();
   }
 
   @Override
@@ -159,6 +171,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     super.onDestroy();
     locationHandler.stop();
     sampler.stop();
+    stopBackgroundRecording();
   }
 
   /**
@@ -202,6 +215,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     requestPermissions();
+    createNotificationChannel();
   }
 
   // Call this method to request permissions
@@ -277,12 +291,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     recordBtn.setAlpha(1.0f);
   }
 
-  private void recordMeasurement() {
+  private String getCurrentCoordinate() {
     double lat = locationHandler.getLastKnownLocation().getLatitude();
     double lng = locationHandler.getLastKnownLocation().getLongitude();
     MGRS mgrs = tileProvider.getMGRS(new LatLng(lat, lng));
-    String coordinate = mgrs.coordinate(GridType.TEN_METER);
+    return mgrs.coordinate(GridType.TEN_METER);
+  }
 
+  private void recordMeasurement() {
+    String coordinate = getCurrentCoordinate();
     Measurement measurement = new Measurement(coordinate);
     measurement.setType(measurementType);
     measurement.setIntensity(sampler.getAverageData());
@@ -300,21 +317,60 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
   }
 
+  private final String CHANNEL_ID = "booo";
+
+  private void createNotificationChannel() {
+    // Create the NotificationChannel, but only on API 26+ because
+    // the NotificationChannel class is new and not in the support library
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      CharSequence name = "BoooName";
+      String description = "BoooDesc";
+      int importance = NotificationManager.IMPORTANCE_DEFAULT;
+      NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+      channel.setDescription(description);
+      // Register the channel with the system; you can't change the importance
+      // or other notification behaviors after this
+      NotificationManager notificationManager = getSystemService(NotificationManager.class);
+      notificationManager.createNotificationChannel(channel);
+    }
+  }
+
+
+  @SuppressLint("MissingPermission")
+  private void sendNotification() {
+    NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher_round)
+            .setContentTitle("My notification")
+            .setContentText("Much longer text that cannot fit one line...")
+            .setStyle(new NotificationCompat.BigTextStyle()
+                    .bigText("Much longer text that cannot fit one line..."))
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+
+    NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+    notificationManager.notify(0, builder.build());
+  }
+
   private void startBackgroundRecording() {
     TimerTask backgroundRecordingTask = new TimerTask() {
       @Override
       public void run() {
+        Log.d("Run", "run: ");
+        // send notifications if a tile hasn't been visited yet
+        if (!measurements.containsKey(getCurrentCoordinate())) {
+          sendNotification();
+        }
+
         runOnUiThread(() -> recordMeasurement());
       }
     };
 
-    // Schedule the background recording task to run every n minutes
     int timePreference = SettingsUtils.getTimePreference(this);
     backgroundRecordingTimer = new Timer();
     backgroundRecordingTimer.scheduleAtFixedRate(backgroundRecordingTask, 0, timePreference == 0 ? 2000 : timePreference);
   }
 
   private void stopBackgroundRecording() {
-    backgroundRecordingTimer.cancel();
+    if (backgroundRecordingTimer != null)
+      backgroundRecordingTimer.cancel();
   }
 }
