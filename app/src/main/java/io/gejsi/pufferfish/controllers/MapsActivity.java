@@ -86,7 +86,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     super.onCreate(savedInstanceState);
 
     // Retrieve location from saved instance state.
-    // TODO: maybe add this info in the files as well, so they are different for each heatmap
     if (savedInstanceState != null) {
       locationHandler.setLastKnownLocation(savedInstanceState.getParcelable(KEY_LOCATION));
     }
@@ -138,9 +137,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     FloatingActionButton recordBtn = binding.record;
     TooltipCompat.setTooltipText(recordBtn, "Save measurement");
-    recordBtn.setOnClickListener(view -> {
-      recordMeasurement();
-    });
+    recordBtn.setOnClickListener(view -> recordMeasurement());
 
     // Obtain the SupportMapFragment and get notified when the map is ready to be used.
     SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);

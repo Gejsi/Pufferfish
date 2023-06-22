@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "865364751391",
+    "project_id": "pufferfish-382810",
+    "storage_bucket": "pufferfish-382810.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:865364751391:android:aba391309518a9e6c3112a",
+        "android_client_info": {
+          "package_name": "io.gejsi.pufferfish"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "865364751391-rglm2kqmqtjmiqu5m71bjct6u831o3al.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "io.gejsi.pufferfish",
+            "certificate_hash": "edf7d577b182ba4dd727c676fcc08d1b2144d0c1"
+          }
+        },
+        {
+          "client_id": "865364751391-1hi40a09giev3ge1n2pnf6hgfji6u7et.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC5_sLGZ1FC_9lKr0rxx9FjEALklhZ3Y8s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "865364751391-1hi40a09giev3ge1n2pnf6hgfji6u7et.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
