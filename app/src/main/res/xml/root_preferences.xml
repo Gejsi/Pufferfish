@@ -22,6 +22,12 @@
             app:title="@string/reply_title"
             app:useSimpleSummaryProvider="true" />
 
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:key="notifications"
+            app:summary="Send notifications while taking measurements"
+            app:title="Notifications" />
+
     </PreferenceCategory>
 
     <PreferenceCategory app:title="@string/sync_header">

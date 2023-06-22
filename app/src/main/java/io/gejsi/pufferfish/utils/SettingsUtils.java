@@ -19,4 +19,9 @@ public class SettingsUtils {
 
     return time * 1000;
   }
+
+  public static boolean getNotificationsPreference(Context context) {
+    SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+    return sharedPreferences.getBoolean("notifications", false);
+  }
 }

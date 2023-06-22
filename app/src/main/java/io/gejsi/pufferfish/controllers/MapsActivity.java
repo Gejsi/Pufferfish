@@ -312,11 +312,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   }
 
   public void startBackgroundRecording() {
+    boolean notificationsEnabled = SettingsUtils.getNotificationsPreference(this);
     TimerTask backgroundRecordingTask = new TimerTask() {
       @Override
       public void run() {
         // send notifications if a tile hasn't been visited yet
-        if (!measurements.containsKey(getCurrentCoordinate())) {
+        if (!measurements.containsKey(getCurrentCoordinate()) && notificationsEnabled) {
           notificationUtils.sendNotification();
         }
 
