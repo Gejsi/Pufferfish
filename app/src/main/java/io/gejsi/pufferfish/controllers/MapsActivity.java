@@ -117,10 +117,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
       this.finish();
     });
 
-    FloatingActionButton loc = binding.loc;
-    TooltipCompat.setTooltipText(loc, "My location");
-    loc.setOnClickListener(view -> locationHandler.getDeviceLocation());
-
     gridUtils = new GridUtils();
     notificationUtils = new NotificationUtils(this);
 

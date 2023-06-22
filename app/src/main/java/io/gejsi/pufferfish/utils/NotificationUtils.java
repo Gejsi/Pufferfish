@@ -9,8 +9,6 @@ import android.os.Build;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
-import java.util.UUID;
-
 import io.gejsi.pufferfish.R;
 
 public class NotificationUtils {
@@ -23,7 +21,7 @@ public class NotificationUtils {
   }
 
   public void createNotificationChannel() {
-    String CHANNEL_ID = UUID.randomUUID().toString();
+    String CHANNEL_ID = "bg";
     // Create the NotificationChannel, but only on API 26+ because
     // the NotificationChannel class is new and not in the support library
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -38,14 +36,14 @@ public class NotificationUtils {
             .setSmallIcon(R.drawable.ic_record)
             .setContentTitle("New tile visited")
             .setStyle(new NotificationCompat.BigTextStyle()
-                    .bigText("This tile has been visited for the first time and a new recording has been saved."))
+                    .bigText("A tile has been visited for the first time and a new recording has been saved."))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true);
   }
 
   @SuppressLint("MissingPermission")
   public void sendNotification() {
-    // id set as 0 to avoid spamming different notifications,
+    // id is set as 0 to avoid spamming different notifications,
     // since they all display the same content.
     NotificationManagerCompat.from(context).notify(0, builder.build());
   }
