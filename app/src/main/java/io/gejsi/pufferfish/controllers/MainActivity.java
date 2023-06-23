@@ -20,10 +20,10 @@ import io.gejsi.pufferfish.R;
 import io.gejsi.pufferfish.databinding.ActivityMainBinding;
 
 public class MainActivity extends AppCompatActivity {
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-
     ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
     setContentView(binding.getRoot());
 
@@ -31,7 +31,33 @@ public class MainActivity extends AppCompatActivity {
     setSupportActionBar(toolbar);
 
     FloatingActionButton fab = binding.fab;
-    fab.setOnClickListener(v -> showDialog("Select the type of measurement you want to perform", new Intent(MainActivity.this, MapsActivity.class)));
+    fab.setOnClickListener(v -> {
+      AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+      builder.setTitle("Select the type of measurement you want to perform");
+
+      // Define the list of measurement types
+      String[] measurementTypes = {"Noise", "WiFi", "LTE"};
+
+      // Set the radio buttons for the measurement types
+      builder.setSingleChoiceItems(measurementTypes, -1, (dialog, which) -> {
+        String selectedMeasurementType = measurementTypes[which];
+
+        Intent intent = new Intent(MainActivity.this, MapsActivity.class);
+        intent.putExtra("measurementType", selectedMeasurementType);
+        startActivity(intent);
+
+        dialog.dismiss();
+      });
+
+      AlertDialog dialog = builder.create();
+      dialog.show();
+    });
+
+    ImageButton profileButton = binding.me;
+    profileButton.setOnClickListener(view -> {
+      Intent intent = new Intent(MainActivity.this, UserActivity.class);
+      startActivity(intent);
+    });
 
     ImageButton settingsButton = binding.settingsButton;
     settingsButton.setOnClickListener(view -> {
@@ -99,26 +125,5 @@ public class MainActivity extends AppCompatActivity {
 
   private void deleteHeatmap(String fileName) {
     this.deleteFile(fileName);
-  }
-
-  private void showDialog(String title, Intent intent) {
-    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-    builder.setTitle(title);
-
-    // Define the list of measurement types
-    String[] measurementTypes = {"Noise", "WiFi", "LTE"};
-
-    // Set the radio buttons for the measurement types
-    builder.setSingleChoiceItems(measurementTypes, -1, (dialog, which) -> {
-      String selectedMeasurementType = measurementTypes[which];
-
-      intent.putExtra("measurementType", selectedMeasurementType);
-      startActivity(intent);
-
-      dialog.dismiss();
-    });
-
-    AlertDialog dialog = builder.create();
-    dialog.show();
   }
 }

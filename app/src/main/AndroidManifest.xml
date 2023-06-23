@@ -17,9 +17,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Pufferfish.NoActionBar"
         tools:targetApi="31">
+        <activity
+            android:name=".controllers.UserActivity"
+            android:exported="false" />
 
         <activity
-            android:name=".controllers.LoginActivity"
+            android:name=".controllers.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -27,11 +30,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <activity
-            android:name=".controllers.MainActivity"
-            android:exported="true" />
-
         <activity
             android:name=".controllers.SettingsActivity"
             android:exported="true"

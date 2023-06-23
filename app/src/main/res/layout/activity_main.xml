@@ -29,6 +29,16 @@
                 android:layout_marginEnd="8dp"
                 android:background="?attr/selectableItemBackground"
                 android:layout_gravity="end"/>
+
+            <ImageButton
+                android:id="@+id/me"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_person"
+                android:padding="8dp"
+                android:layout_marginEnd="8dp"
+                android:background="?attr/selectableItemBackground"
+                android:layout_gravity="end"/>
         </androidx.appcompat.widget.Toolbar>
 
 
