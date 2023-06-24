@@ -14,19 +14,22 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import io.gejsi.pufferfish.models.Measurement;
 
 public class HeatmapUtils {
-  public static void saveHeatmap(Activity activity, Measurement.Type measurementType, Collection<Measurement> measurements) {
+  public static boolean saveHeatmap(Activity activity, Measurement.Type measurementType, Collection<Measurement> measurements, String existingFile) {
     if (measurements.isEmpty()) {
       Toast.makeText(activity, "No measurements have been taken yet. Cannot save the heatmap.", Toast.LENGTH_SHORT).show();
-      return;
+      return false;
     }
 
     String timestamp = new SimpleDateFormat("dd-MM-yyyy_HH:mm:ss", Locale.getDefault()).format(new Date());
@@ -59,7 +62,7 @@ public class HeatmapUtils {
       e.printStackTrace();
     }
 
-    String fileName = "Heatmap_" + measurementType + "_" + timestamp + ".json";
+    String fileName = existingFile != null ? existingFile : "Heatmap_" + measurementType + "_" + timestamp + ".json";
     try {
       File file = new File(activity.getFilesDir(), fileName);
       FileWriter fileWriter = new FileWriter(file);
@@ -70,6 +73,8 @@ public class HeatmapUtils {
       e.printStackTrace();
       Toast.makeText(activity, "Error while saving the heatmap", Toast.LENGTH_SHORT).show();
     }
+
+    return true;
   }
 
   public static Map<String, Measurement> loadHeatmap(Activity activity, String fileName) {
@@ -106,5 +111,28 @@ public class HeatmapUtils {
     }
 
     return null;
+  }
+
+  public static List<String> getLocalHeatmaps(String[] fileList) {
+    return Arrays.stream(fileList)
+            .filter(fileName -> fileName.startsWith("Heatmap_") && fileName.endsWith(".json"))
+            .sorted((fileName1, fileName2) -> {
+              // Split the file names into parts
+              String[] fileParts1 = fileName1.split("_");
+              String[] fileParts2 = fileName2.split("_");
+              String date1 = fileParts1[2];
+              String time1 = fileParts1[3].substring(0, fileParts1[3].length() - 5);
+              String date2 = fileParts2[2];
+              String time2 = fileParts2[3].substring(0, fileParts2[3].length() - 5);
+
+              // compare the date and time values
+              int dateComparison = date2.compareTo(date1);
+              if (dateComparison != 0) {
+                return dateComparison; // sort by date in descending order
+              } else {
+                return time2.compareTo(time1); // sort by time in descending order
+              }
+            })
+            .collect(Collectors.toList());
   }
 }

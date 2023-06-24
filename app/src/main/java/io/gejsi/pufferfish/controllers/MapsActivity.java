@@ -57,6 +57,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
   private Map<String, Measurement> measurements;
 
+  /** Used if a heatmap is being edited rather than being created. */
+  private volatile String existingFileName = null;
+
   private Measurement.Type measurementType = Measurement.Type.Noise;
 
   public static final int PERMISSIONS_REQUEST_CODE = 1;
@@ -90,10 +93,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
       locationHandler.setLastKnownLocation(savedInstanceState.getParcelable(KEY_LOCATION));
     }
 
-    // Retrieve the measurements from intent extras
     if (getIntent().hasExtra("fileName")) {
-      String fileName = getIntent().getStringExtra("fileName");
-      measurements = HeatmapUtils.loadHeatmap(this, fileName);
+      existingFileName = getIntent().getStringExtra("fileName");
+      measurements = HeatmapUtils.loadHeatmap(this, existingFileName);
     } else {
       measurements = new HashMap<>();
     }
@@ -112,8 +114,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     Button saveBtn = binding.btnSave;
     saveBtn.setOnClickListener(v -> {
-      HeatmapUtils.saveHeatmap(this, measurementType, measurements.values());
-      this.finish();
+      boolean isSaved = HeatmapUtils.saveHeatmap(this, measurementType, measurements.values(), existingFileName);
+      if (isSaved)
+        this.finish();
     });
 
     gridUtils = new GridUtils();
