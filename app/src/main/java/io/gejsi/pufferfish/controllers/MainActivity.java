@@ -5,12 +5,14 @@ import android.os.Bundle;
 import android.widget.AdapterView;
 import android.widget.ImageButton;
 import android.widget.ListView;
+import android.widget.ViewFlipper;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.tabs.TabLayout;
 
 import java.util.Arrays;
 import java.util.List;
@@ -63,6 +65,22 @@ public class MainActivity extends AppCompatActivity {
     settingsButton.setOnClickListener(view -> {
       Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
       startActivity(intent);
+    });
+
+    TabLayout tabs = binding.tabLayout;
+    ViewFlipper viewFlipper = binding.viewFlipper;
+    tabs.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+      @Override
+      public void onTabSelected(TabLayout.Tab tab) {
+        int position = tab.getPosition();
+        viewFlipper.setDisplayedChild(position);
+      }
+      @Override
+      public void onTabUnselected(TabLayout.Tab tab) {
+      }
+      @Override
+      public void onTabReselected(TabLayout.Tab tab) {
+      }
     });
   }
 
