@@ -2,7 +2,6 @@ package io.gejsi.pufferfish.controllers;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.AdapterView;
 import android.widget.ImageButton;
 import android.widget.ListView;
@@ -88,7 +87,7 @@ public class MainActivity extends AppCompatActivity {
   protected void onResume() {
     super.onResume();
 
-    List<String> files = HeatmapUtils.getLocalHeatmaps(this.getApplicationContext().fileList());
+    List<String> files = HeatmapUtils.getLocalFiles(this.getApplicationContext().fileList());
 
     ListView heatmapListView = findViewById(R.id.heatmapListView);
     HeatmapListAdapter heatmapListAdapter = new HeatmapListAdapter(this, files);
@@ -117,7 +116,7 @@ public class MainActivity extends AppCompatActivity {
                 heatmapListAdapter.notifyDataSetChanged();
               })
               .setNeutralButton("Sync online", (dialog, which) -> {
-                Log.d("Test", "sync");
+                HeatmapUtils.syncHeatmap(this, fileName);
               })
               .show();
     };

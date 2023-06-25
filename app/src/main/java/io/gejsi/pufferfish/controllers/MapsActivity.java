@@ -95,7 +95,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     if (getIntent().hasExtra("fileName")) {
       existingFileName = getIntent().getStringExtra("fileName");
-      measurements = HeatmapUtils.loadHeatmap(this, existingFileName);
+      measurements = HeatmapUtils.loadHeatmap(this, existingFileName).getMeasurements();
     } else {
       measurements = new HashMap<>();
     }

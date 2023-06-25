@@ -1,7 +1,19 @@
 package io.gejsi.pufferfish.utils;
 
 import android.app.Activity;
+import android.util.Log;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
+import com.google.firebase.database.ValueEventListener;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -23,6 +35,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import io.gejsi.pufferfish.R;
+import io.gejsi.pufferfish.models.Heatmap;
 import io.gejsi.pufferfish.models.Measurement;
 
 public class HeatmapUtils {
@@ -55,7 +69,15 @@ public class HeatmapUtils {
 
     JSONObject rootObject = new JSONObject();
     try {
-      rootObject.put("timestamp", timestamp);
+      if (existingFile != null) {
+        // gets the timestamp from the filename if the heatmap is being edited
+        String[] fileParts = existingFile.substring(0, existingFile.length() - ".json".length()).split("_");
+        String existingTimestamp = fileParts[2] + "_" + fileParts[3];
+        rootObject.put("timestamp", existingTimestamp);
+      } else {
+        // otherwise, get the current timestamp
+        rootObject.put("timestamp", timestamp);
+      }
       rootObject.put("type", measurementType);
       rootObject.put("measurements", measurementsArray);
     } catch (JSONException e) {
@@ -77,7 +99,11 @@ public class HeatmapUtils {
     return true;
   }
 
-  public static Map<String, Measurement> loadHeatmap(Activity activity, String fileName) {
+  public static Heatmap loadHeatmap(Activity activity, String fileName) {
+    String timestamp = "";
+    Measurement.Type measurementType = null;
+    Map<String, Measurement> measurements = new HashMap<>();
+
     try {
       File file = new File(activity.getFilesDir(), fileName);
       InputStreamReader inputStreamReader = new InputStreamReader(new FileInputStream(file));
@@ -92,10 +118,10 @@ public class HeatmapUtils {
       // Parse the JSON string
       String jsonString = sb.toString();
       JSONObject rootObject = new JSONObject(jsonString);
-      JSONArray measurementsArray = rootObject.getJSONArray("measurements");
+      timestamp = rootObject.getString("timestamp");
+      measurementType = Measurement.Type.valueOf(rootObject.getString("type"));
 
-      // Iterate over the JSON array and create Measurement objects
-      Map<String, Measurement> measurements = new HashMap<>();
+      JSONArray measurementsArray = rootObject.getJSONArray("measurements");
       for (int i = 0; i < measurementsArray.length(); i++) {
         JSONObject measurementObject = measurementsArray.getJSONObject(i);
         String coordinate = measurementObject.getString("coordinate");
@@ -103,17 +129,15 @@ public class HeatmapUtils {
         Measurement.Intensity intensity = Measurement.Intensity.valueOf(measurementObject.getString("intensity"));
         measurements.put(coordinate, new Measurement(coordinate, type, intensity));
       }
-
-      return measurements;
     } catch (IOException | JSONException e) {
       e.printStackTrace();
       Toast.makeText(activity, "Error while loading the heatmap", Toast.LENGTH_SHORT).show();
     }
 
-    return null;
+    return new Heatmap(timestamp, measurementType, measurements);
   }
 
-  public static List<String> getLocalHeatmaps(String[] fileList) {
+  public static List<String> getLocalFiles(String[] fileList) {
     return Arrays.stream(fileList)
             .filter(fileName -> fileName.startsWith("Heatmap_") && fileName.endsWith(".json"))
             .sorted((fileName1, fileName2) -> {
@@ -134,5 +158,49 @@ public class HeatmapUtils {
               }
             })
             .collect(Collectors.toList());
+  }
+
+  public static void syncHeatmap(Activity activity, String fileName) {
+    FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+
+    if (currentUser == null) {
+      Toast.makeText(activity, "Cannot sync as a guest. Please, login.", Toast.LENGTH_SHORT).show();
+      return;
+    }
+
+    Heatmap heatmap = loadHeatmap(activity, fileName);
+    Log.d("Test", "syncHeatmap: " + heatmap.getTimestamp());
+
+    FirebaseDatabase database = FirebaseDatabase.getInstance(activity.getResources().getString(R.string.db));
+    DatabaseReference heatmapsRef = database.getReference("heatmaps").child(currentUser.getUid());
+
+    Query query = heatmapsRef.orderByChild("timestamp").equalTo(heatmap.getTimestamp());
+
+    query.addListenerForSingleValueEvent(new ValueEventListener() {
+      @Override
+      public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+        if (dataSnapshot.exists()) {
+          // heatmap already exists, update it
+          for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+            String heatmapKey = snapshot.getKey();
+            if (heatmapKey != null) {
+              heatmapsRef.child(heatmapKey).setValue(heatmap).addOnSuccessListener(activity, __ -> {
+                Toast.makeText(activity, "Heatmap successfully updated.", Toast.LENGTH_SHORT).show();
+              });
+            }
+          }
+        } else {
+          // heatmap is new, push it
+          heatmapsRef.push().setValue(heatmap).addOnSuccessListener(activity, __ -> {
+            Toast.makeText(activity, "Heatmap successfully synced.", Toast.LENGTH_SHORT).show();
+          });
+        }
+      }
+
+      @Override
+      public void onCancelled(@NonNull DatabaseError databaseError) {
+        Toast.makeText(activity, "Error syncing the heatmap.", Toast.LENGTH_SHORT).show();
+      }
+    });
   }
 }
