@@ -7,6 +7,7 @@ public class Heatmap {
   private Measurement.Type measurementType;
   private Map<String, Measurement> measurements;
 
+
   public Heatmap() {}
 
   public Heatmap(String timestamp, Measurement.Type measurementType, Map<String, Measurement> measurements) {

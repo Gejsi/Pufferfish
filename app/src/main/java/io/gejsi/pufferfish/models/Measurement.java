@@ -2,6 +2,8 @@ package io.gejsi.pufferfish.models;
 
 import androidx.annotation.NonNull;
 
+import com.google.firebase.database.Exclude;
+
 public class Measurement {
   private String coordinate;
   private Type type;
@@ -39,6 +41,7 @@ public class Measurement {
     return intensity;
   }
 
+  @Exclude
   public void setIntensity(double data) {
     if (type == Type.Noise) {
       if (data < 10) intensity = Intensity.Good;

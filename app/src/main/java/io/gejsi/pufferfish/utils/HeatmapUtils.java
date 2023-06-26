@@ -1,7 +1,6 @@
 package io.gejsi.pufferfish.utils;
 
 import android.app.Activity;
-import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -169,13 +168,11 @@ public class HeatmapUtils {
     }
 
     Heatmap heatmap = loadHeatmap(activity, fileName);
-    Log.d("Test", "syncHeatmap: " + heatmap.getTimestamp());
 
-    FirebaseDatabase database = FirebaseDatabase.getInstance(activity.getResources().getString(R.string.db));
+    FirebaseDatabase database = FirebaseDatabase.getInstance(activity.getString(R.string.db));
     DatabaseReference heatmapsRef = database.getReference("heatmaps").child(currentUser.getUid());
 
     Query query = heatmapsRef.orderByChild("timestamp").equalTo(heatmap.getTimestamp());
-
     query.addListenerForSingleValueEvent(new ValueEventListener() {
       @Override
       public void onDataChange(@NonNull DataSnapshot dataSnapshot) {

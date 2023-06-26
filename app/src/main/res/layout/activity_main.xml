@@ -71,20 +71,9 @@
         android:layout_height="match_parent"
         android:layout_marginTop="98dp">
 
-        <include
-            android:id="@+id/content"
-            layout="@layout/content_scrolling" />
+        <include layout="@layout/local_heatmaps" />
 
-        <ScrollView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="@dimen/text_margin"
-                android:text="@string/large_text" />
-        </ScrollView>
+        <include layout="@layout/online_heatmaps" />
     </ViewFlipper>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
