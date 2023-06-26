@@ -180,15 +180,15 @@ public class HeatmapUtils {
           // heatmap already exists, update it
           for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
             String heatmapKey = snapshot.getKey();
-            if (heatmapKey != null) {
+
+            if (heatmapKey != null)
               heatmapsRef.child(heatmapKey).setValue(heatmap).addOnSuccessListener(activity, __ -> {
                 Toast.makeText(activity, "Heatmap successfully updated.", Toast.LENGTH_SHORT).show();
               });
-            }
           }
         } else {
           // heatmap is new, push it
-          heatmapsRef.push().setValue(heatmap).addOnSuccessListener(activity, __ -> {
+          heatmapsRef.child(heatmap.getTimestamp()).setValue(heatmap).addOnSuccessListener(activity, __ -> {
             Toast.makeText(activity, "Heatmap successfully synced.", Toast.LENGTH_SHORT).show();
           });
         }

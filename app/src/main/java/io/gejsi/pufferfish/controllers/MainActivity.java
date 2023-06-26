@@ -7,7 +7,6 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ImageButton;
 import android.widget.ListView;
-import android.widget.Toast;
 import android.widget.ViewFlipper;
 
 import androidx.annotation.NonNull;
@@ -27,6 +26,7 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import io.gejsi.pufferfish.R;
 import io.gejsi.pufferfish.databinding.ActivityMainBinding;
@@ -87,10 +87,6 @@ public class MainActivity extends AppCompatActivity {
       public void onTabSelected(TabLayout.Tab tab) {
         int position = tab.getPosition();
         viewFlipper.setDisplayedChild(position);
-
-        if (position == 0) {
-        } else if (position == 1) {
-        }
       }
 
       @Override
@@ -101,6 +97,7 @@ public class MainActivity extends AppCompatActivity {
       public void onTabReselected(TabLayout.Tab tab) {
       }
     });
+
   }
 
   @Override
@@ -151,31 +148,38 @@ public class MainActivity extends AppCompatActivity {
       findViewById(R.id.online_desc).setVisibility(View.VISIBLE);
 
       ListView onlineHeatmaps = findViewById(R.id.onlineHeatmapsList);
-      Log.d("Test", "onResume: ");
       FirebaseDatabase database = FirebaseDatabase.getInstance(getString(R.string.db));
       DatabaseReference heatmapsRef = database.getReference("heatmaps").child(currentUser.getUid());
       List<Heatmap> heatmapList = new ArrayList<>();
 
+      OnlineHeatmapListAdapter onlineListAdapter = new OnlineHeatmapListAdapter(MainActivity.this, heatmapList);
+      onlineHeatmaps.setAdapter(onlineListAdapter);
+
+      CompletableFuture<DataSnapshot> dataSnapshotFuture = new CompletableFuture<>();
       heatmapsRef.addValueEventListener(new ValueEventListener() {
         @Override
         public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-          // Here you can access the heatmaps data
-          for (DataSnapshot heatmapSnapshot : dataSnapshot.getChildren()) {
-            // Extract the heatmap data
-            String heatmapKey = heatmapSnapshot.getKey();
-            Heatmap heatmap = heatmapSnapshot.getValue(Heatmap.class);
-            heatmapList.add(heatmap);
-          }
+          dataSnapshotFuture.complete(dataSnapshot);
         }
-
         @Override
         public void onCancelled(@NonNull DatabaseError databaseError) {
-          Toast.makeText(MainActivity.this, "Error while retrieving heatmaps", Toast.LENGTH_SHORT).show();
+          heatmapList.clear();
+          onlineListAdapter.notifyDataSetChanged();
         }
       });
 
-      OnlineHeatmapListAdapter onlineListAdapter = new OnlineHeatmapListAdapter(this, heatmapList);
-      onlineHeatmaps.setAdapter(onlineListAdapter);
+
+      dataSnapshotFuture.thenAccept(dataSnapshot -> {
+        for (DataSnapshot heatmapSnapshot : dataSnapshot.getChildren()) {
+          String heatmapKey = heatmapSnapshot.getKey();
+          Heatmap heatmap = heatmapSnapshot.getValue(Heatmap.class);
+          heatmapList.add(heatmap);
+        }
+
+        // update data after fetching
+        onlineListAdapter.notifyDataSetChanged();
+      });
+
 
       AdapterView.OnItemClickListener dialogHandler = (parent, v, position, id) -> {
         Heatmap heatmap = heatmapList.get(position);
