@@ -99,6 +99,23 @@ public class HeatmapUtils {
     return true;
   }
 
+  public static boolean updateHeatmap(Activity activity, String heatmapKey, Map<String, Measurement> measurements) {
+    FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+    assert currentUser != null;
+    FirebaseDatabase database = FirebaseDatabase.getInstance(activity.getString(R.string.db));
+    DatabaseReference heatmapsRef = database.getReference("heatmaps").child(currentUser.getUid());
+
+    Map<String, Object> objectMeasurements = new HashMap<>();
+    objectMeasurements.put("measurements", measurements);
+    heatmapsRef.child(heatmapKey).updateChildren(objectMeasurements).addOnSuccessListener(__ -> {
+      Toast.makeText(activity, "Heatmap updated", Toast.LENGTH_SHORT).show();
+    }).addOnFailureListener(__ -> {
+      Toast.makeText(activity, "Error while updating the heatmap", Toast.LENGTH_SHORT).show();
+    });
+
+    return true;
+  }
+
   public static Heatmap loadHeatmap(Activity activity, String fileName) {
     String timestamp = "";
     Measurement.Type measurementType = null;

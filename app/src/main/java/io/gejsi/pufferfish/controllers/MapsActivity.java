@@ -74,7 +74,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
           Manifest.permission.ACCESS_FINE_LOCATION,
           Manifest.permission.ACCESS_COARSE_LOCATION,
           Manifest.permission.RECORD_AUDIO,
-          Manifest.permission.ACCESS_WIFI_STATE,
           Manifest.permission.POST_NOTIFICATIONS
   };
 
@@ -100,9 +99,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     if (getIntent().hasExtra(IntentKey.FileName.toString())) {
+      // the measurements come from an existing local file
       existingFileName = getIntent().getStringExtra(IntentKey.FileName.toString());
       measurements = HeatmapUtils.loadHeatmap(this, existingFileName).getMeasurements();
     } else if (getIntent().hasExtra(IntentKey.OnlineTimestamp.toString())) {
+      // the measurements come from a heatmap saved online
       onlineTimestamp = getIntent().getStringExtra(IntentKey.OnlineTimestamp.toString());
       CompletableFuture<Heatmap> heatmapFuture = HeatmapUtils.fetchHeatmap(this, onlineTimestamp);
 
@@ -112,6 +113,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
       });
     } else {
+      // the measurements are brand new, they will be later saved locally
       measurements = new HashMap<>();
     }
 
@@ -129,9 +131,17 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     Button saveBtn = binding.btnSave;
     saveBtn.setOnClickListener(v -> {
-      boolean isSaved = HeatmapUtils.saveHeatmap(this, measurementType, measurements.values(), existingFileName);
-      if (isSaved)
+      boolean isSaved = false;
+
+      if (existingFileName != null) {
+        isSaved = HeatmapUtils.saveHeatmap(this, measurementType, measurements.values(), existingFileName);
+      } else if (onlineTimestamp != null) {
+        isSaved = HeatmapUtils.updateHeatmap(this, onlineTimestamp, measurements);
+      }
+
+      if (isSaved) {
         this.finish();
+      }
     });
 
     gridUtils = new GridUtils();
