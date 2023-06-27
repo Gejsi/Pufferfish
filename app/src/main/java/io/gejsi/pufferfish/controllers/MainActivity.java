@@ -4,9 +4,9 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.ImageButton;
 import android.widget.ListView;
+import android.widget.Toast;
 import android.widget.ViewFlipper;
 
 import androidx.annotation.NonNull;
@@ -87,6 +87,10 @@ public class MainActivity extends AppCompatActivity {
       public void onTabSelected(TabLayout.Tab tab) {
         int position = tab.getPosition();
         viewFlipper.setDisplayedChild(position);
+
+        if (position == 1) {
+          fillOnlineList();
+        }
       }
 
       @Override
@@ -161,6 +165,7 @@ public class MainActivity extends AppCompatActivity {
         public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
           dataSnapshotFuture.complete(dataSnapshot);
         }
+
         @Override
         public void onCancelled(@NonNull DatabaseError databaseError) {
           heatmapList.clear();
@@ -171,7 +176,6 @@ public class MainActivity extends AppCompatActivity {
 
       dataSnapshotFuture.thenAccept(dataSnapshot -> {
         for (DataSnapshot heatmapSnapshot : dataSnapshot.getChildren()) {
-          String heatmapKey = heatmapSnapshot.getKey();
           Heatmap heatmap = heatmapSnapshot.getValue(Heatmap.class);
           heatmapList.add(heatmap);
         }
@@ -181,7 +185,7 @@ public class MainActivity extends AppCompatActivity {
       });
 
 
-      AdapterView.OnItemClickListener dialogHandler = (parent, v, position, id) -> {
+      onlineHeatmaps.setOnItemClickListener((parent, v, position, id) -> {
         Heatmap heatmap = heatmapList.get(position);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(parent.getContext());
@@ -191,12 +195,16 @@ public class MainActivity extends AppCompatActivity {
                   Log.d("Test", "opened online");
                 })
                 .setNegativeButton("Delete", (dialog, which) -> {
-                  Log.d("Test", "deleted online");
+                  heatmapsRef.child(heatmap.getTimestamp()).removeValue().addOnSuccessListener(MainActivity.this, __ -> {
+                    Toast.makeText(MainActivity.this, "Heatmap successfully deleted.", Toast.LENGTH_SHORT).show();
+                    heatmapList.remove(position);
+                    onlineListAdapter.notifyDataSetChanged();
+                  }).addOnFailureListener(MainActivity.this, exception -> {
+                    Toast.makeText(MainActivity.this, "Something went wrong while deleting the heatmap.", Toast.LENGTH_SHORT).show();
+                  });
                 })
                 .show();
-      };
-
-      onlineHeatmaps.setOnItemClickListener(dialogHandler);
+      });
     }
   }
 
