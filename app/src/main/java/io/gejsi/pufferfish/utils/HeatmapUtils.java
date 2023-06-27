@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import io.gejsi.pufferfish.R;
@@ -199,5 +200,40 @@ public class HeatmapUtils {
         Toast.makeText(activity, "Error syncing the heatmap.", Toast.LENGTH_SHORT).show();
       }
     });
+  }
+
+  public static CompletableFuture<Heatmap> fetchHeatmap(Activity activity, String onlineTimestamp) {
+    FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+    assert currentUser != null;
+
+    FirebaseDatabase database = FirebaseDatabase.getInstance(activity.getString(R.string.db));
+    DatabaseReference heatmapsRef = database.getReference("heatmaps").child(currentUser.getUid());
+    CompletableFuture<Heatmap> heatmapFuture = new CompletableFuture<>();
+
+    ValueEventListener valueEventListener = new ValueEventListener() {
+      @Override
+      public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+        for (DataSnapshot heatmapSnapshot : dataSnapshot.getChildren()) {
+          Heatmap heatmap = heatmapSnapshot.getValue(Heatmap.class);
+          if (heatmap != null && heatmap.getTimestamp().equals(onlineTimestamp)) {
+            heatmapFuture.complete(heatmap);
+            return;
+          }
+        }
+
+        Toast.makeText(activity, "Heatmap not found.", Toast.LENGTH_SHORT).show();
+        heatmapFuture.complete(null);
+      }
+
+      @Override
+      public void onCancelled(@NonNull DatabaseError databaseError) {
+        Toast.makeText(activity, "Error while fetching the heatmap.", Toast.LENGTH_SHORT).show();
+        activity.finish();
+      }
+    };
+
+    heatmapsRef.addValueEventListener(valueEventListener);
+
+    return heatmapFuture;
   }
 }

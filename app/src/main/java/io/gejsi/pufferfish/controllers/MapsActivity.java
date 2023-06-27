@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.gejsi.pufferfish.R;
@@ -36,6 +37,8 @@ import io.gejsi.pufferfish.handlers.AudioHandler;
 import io.gejsi.pufferfish.handlers.LocationHandler;
 import io.gejsi.pufferfish.handlers.LteHandler;
 import io.gejsi.pufferfish.handlers.WifiHandler;
+import io.gejsi.pufferfish.models.Heatmap;
+import io.gejsi.pufferfish.models.IntentKey;
 import io.gejsi.pufferfish.models.Measurement;
 import io.gejsi.pufferfish.models.MeasurementSampler;
 import io.gejsi.pufferfish.utils.GridUtils;
@@ -57,8 +60,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
   private Map<String, Measurement> measurements;
 
-  /** Used if a heatmap is being edited rather than being created. */
+  /** Used if a **local** heatmap is being edited rather than being created. */
   private volatile String existingFileName = null;
+
+  /** Used if an **online** heatmap is being edited rather than being created. */
+  private volatile String onlineTimestamp = null;
 
   private Measurement.Type measurementType = Measurement.Type.Noise;
 
@@ -93,16 +99,25 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
       locationHandler.setLastKnownLocation(savedInstanceState.getParcelable(KEY_LOCATION));
     }
 
-    if (getIntent().hasExtra("fileName")) {
-      existingFileName = getIntent().getStringExtra("fileName");
+    if (getIntent().hasExtra(IntentKey.FileName.toString())) {
+      existingFileName = getIntent().getStringExtra(IntentKey.FileName.toString());
       measurements = HeatmapUtils.loadHeatmap(this, existingFileName).getMeasurements();
+    } else if (getIntent().hasExtra(IntentKey.OnlineTimestamp.toString())) {
+      onlineTimestamp = getIntent().getStringExtra(IntentKey.OnlineTimestamp.toString());
+      CompletableFuture<Heatmap> heatmapFuture = HeatmapUtils.fetchHeatmap(this, onlineTimestamp);
+
+      heatmapFuture.thenAccept(heatmap -> {
+        if (heatmap != null) {
+          measurements = heatmap.getMeasurements();
+        }
+      });
     } else {
       measurements = new HashMap<>();
     }
 
     // Retrieve the selected measurement type from intent extras
-    if (getIntent().hasExtra("measurementType")) {
-      String selectedMeasurementType = getIntent().getStringExtra("measurementType");
+    if (getIntent().hasExtra(IntentKey.MeasurementType.toString())) {
+      String selectedMeasurementType = getIntent().getStringExtra(IntentKey.MeasurementType.toString());
       measurementType = Measurement.Type.valueOf(selectedMeasurementType);
     }
 

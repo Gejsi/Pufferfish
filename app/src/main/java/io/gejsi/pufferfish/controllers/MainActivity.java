@@ -2,7 +2,6 @@ package io.gejsi.pufferfish.controllers;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ListView;
@@ -31,15 +30,14 @@ import java.util.concurrent.CompletableFuture;
 import io.gejsi.pufferfish.R;
 import io.gejsi.pufferfish.databinding.ActivityMainBinding;
 import io.gejsi.pufferfish.models.Heatmap;
+import io.gejsi.pufferfish.models.IntentKey;
 import io.gejsi.pufferfish.utils.HeatmapUtils;
 
 public class MainActivity extends AppCompatActivity {
-  private ActivityMainBinding binding;
-
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    binding = ActivityMainBinding.inflate(getLayoutInflater());
+    ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
     setContentView(binding.getRoot());
 
     Toolbar toolbar = binding.toolbar;
@@ -58,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
         String selectedMeasurementType = measurementTypes[which];
 
         Intent intent = new Intent(MainActivity.this, MapsActivity.class);
-        intent.putExtra("measurementType", selectedMeasurementType);
+        intent.putExtra(IntentKey.MeasurementType.toString(), selectedMeasurementType);
         startActivity(intent);
 
         dialog.dismiss();
@@ -125,8 +123,8 @@ public class MainActivity extends AppCompatActivity {
               .setMessage("What do you will you do with this heatmap?")
               .setPositiveButton("Open", (dialog, which) -> {
                 Intent intent = new Intent(MainActivity.this, MapsActivity.class);
-                intent.putExtra("measurementType", fileName.split("_")[1]);
-                intent.putExtra("fileName", fileName);
+                intent.putExtra(IntentKey.MeasurementType.toString(), fileName.split("_")[1]);
+                intent.putExtra(IntentKey.FileName.toString(), fileName);
                 startActivity(intent);
               })
               .setNegativeButton("Delete", (dialog, which) -> {
@@ -192,7 +190,10 @@ public class MainActivity extends AppCompatActivity {
         builder.setTitle("Actions")
                 .setMessage("What do you will you do with this heatmap?")
                 .setPositiveButton("Open", (dialog, which) -> {
-                  Log.d("Test", "opened online");
+                  Intent intent = new Intent(MainActivity.this, MapsActivity.class);
+                  intent.putExtra(IntentKey.MeasurementType.toString(), heatmap.getMeasurementType().toString());
+                  intent.putExtra(IntentKey.OnlineTimestamp.toString(), heatmap.getTimestamp());
+                  startActivity(intent);
                 })
                 .setNegativeButton("Delete", (dialog, which) -> {
                   heatmapsRef.child(heatmap.getTimestamp()).removeValue().addOnSuccessListener(MainActivity.this, __ -> {
