@@ -1,6 +1,7 @@
 package io.gejsi.pufferfish.controllers;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageButton;
@@ -13,6 +14,12 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import com.github.mikephil.charting.charts.BarChart;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.data.BarData;
+import com.github.mikephil.charting.data.BarDataSet;
+import com.github.mikephil.charting.data.BarEntry;
+import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.auth.FirebaseAuth;
@@ -88,6 +95,12 @@ public class MainActivity extends AppCompatActivity {
 
         if (position == 1) {
           fillOnlineList();
+          fab.setVisibility(View.GONE);
+        } else if (position == 2) {
+          fillStats();
+          fab.setVisibility(View.GONE);
+        } else {
+          fab.setVisibility(View.VISIBLE);
         }
       }
 
@@ -107,7 +120,8 @@ public class MainActivity extends AppCompatActivity {
     super.onResume();
 
     fillLocalList();
-    fillOnlineList();
+    // fillOnlineList();
+    // fillStats();
   }
 
   private void fillLocalList() {
@@ -142,71 +156,115 @@ public class MainActivity extends AppCompatActivity {
 
   private void fillOnlineList() {
     FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+
     if (currentUser == null) {
       findViewById(R.id.not_logged).setVisibility(View.VISIBLE);
       findViewById(R.id.online_desc).setVisibility(View.GONE);
-    } else {
-      findViewById(R.id.not_logged).setVisibility(View.GONE);
-      findViewById(R.id.online_desc).setVisibility(View.VISIBLE);
-
-      ListView onlineHeatmaps = findViewById(R.id.onlineHeatmapsList);
-      FirebaseDatabase database = FirebaseDatabase.getInstance(getString(R.string.db));
-      DatabaseReference heatmapsRef = database.getReference("heatmaps").child(currentUser.getUid());
-      List<Heatmap> heatmapList = new ArrayList<>();
-
-      OnlineHeatmapListAdapter onlineListAdapter = new OnlineHeatmapListAdapter(MainActivity.this, heatmapList);
-      onlineHeatmaps.setAdapter(onlineListAdapter);
-
-      CompletableFuture<DataSnapshot> dataSnapshotFuture = new CompletableFuture<>();
-      heatmapsRef.addValueEventListener(new ValueEventListener() {
-        @Override
-        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-          dataSnapshotFuture.complete(dataSnapshot);
-        }
-
-        @Override
-        public void onCancelled(@NonNull DatabaseError databaseError) {
-          heatmapList.clear();
-          onlineListAdapter.notifyDataSetChanged();
-        }
-      });
-
-
-      dataSnapshotFuture.thenAccept(dataSnapshot -> {
-        for (DataSnapshot heatmapSnapshot : dataSnapshot.getChildren()) {
-          Heatmap heatmap = heatmapSnapshot.getValue(Heatmap.class);
-          heatmapList.add(heatmap);
-        }
-
-        // update data after fetching
-        onlineListAdapter.notifyDataSetChanged();
-      });
-
-
-      onlineHeatmaps.setOnItemClickListener((parent, v, position, id) -> {
-        Heatmap heatmap = heatmapList.get(position);
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(parent.getContext());
-        builder.setTitle("Actions")
-                .setMessage("What do you will you do with this heatmap?")
-                .setPositiveButton("Open", (dialog, which) -> {
-                  Intent intent = new Intent(MainActivity.this, MapsActivity.class);
-                  intent.putExtra(IntentKey.MeasurementType.toString(), heatmap.getMeasurementType().toString());
-                  intent.putExtra(IntentKey.OnlineTimestamp.toString(), heatmap.getTimestamp());
-                  startActivity(intent);
-                })
-                .setNegativeButton("Delete", (dialog, which) -> {
-                  heatmapsRef.child(heatmap.getTimestamp()).removeValue().addOnSuccessListener(MainActivity.this, __ -> {
-                    Toast.makeText(MainActivity.this, "Heatmap successfully deleted.", Toast.LENGTH_SHORT).show();
-                    heatmapList.remove(position);
-                    onlineListAdapter.notifyDataSetChanged();
-                  }).addOnFailureListener(MainActivity.this, exception -> {
-                    Toast.makeText(MainActivity.this, "Something went wrong while deleting the heatmap.", Toast.LENGTH_SHORT).show();
-                  });
-                })
-                .show();
-      });
+      return;
     }
+
+    findViewById(R.id.not_logged).setVisibility(View.GONE);
+    findViewById(R.id.online_desc).setVisibility(View.VISIBLE);
+
+    ListView onlineHeatmaps = findViewById(R.id.onlineHeatmapsList);
+    FirebaseDatabase database = FirebaseDatabase.getInstance(getString(R.string.db));
+    DatabaseReference heatmapsRef = database.getReference("heatmaps").child(currentUser.getUid());
+    List<Heatmap> heatmapList = new ArrayList<>();
+
+    OnlineHeatmapListAdapter onlineListAdapter = new OnlineHeatmapListAdapter(MainActivity.this, heatmapList);
+    onlineHeatmaps.setAdapter(onlineListAdapter);
+
+    CompletableFuture<DataSnapshot> dataSnapshotFuture = new CompletableFuture<>();
+    heatmapsRef.addValueEventListener(new ValueEventListener() {
+      @Override
+      public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+        dataSnapshotFuture.complete(dataSnapshot);
+      }
+
+      @Override
+      public void onCancelled(@NonNull DatabaseError databaseError) {
+        heatmapList.clear();
+        onlineListAdapter.notifyDataSetChanged();
+      }
+    });
+
+
+    dataSnapshotFuture.thenAccept(dataSnapshot -> {
+      for (DataSnapshot heatmapSnapshot : dataSnapshot.getChildren()) {
+        Heatmap heatmap = heatmapSnapshot.getValue(Heatmap.class);
+        heatmapList.add(heatmap);
+      }
+
+      // update data after fetching
+      onlineListAdapter.notifyDataSetChanged();
+    });
+
+
+    onlineHeatmaps.setOnItemClickListener((parent, v, position, id) -> {
+      Heatmap heatmap = heatmapList.get(position);
+
+      AlertDialog.Builder builder = new AlertDialog.Builder(parent.getContext());
+      builder.setTitle("Actions")
+              .setMessage("What do you will you do with this heatmap?")
+              .setPositiveButton("Open", (dialog, which) -> {
+                Intent intent = new Intent(MainActivity.this, MapsActivity.class);
+                intent.putExtra(IntentKey.MeasurementType.toString(), heatmap.getMeasurementType().toString());
+                intent.putExtra(IntentKey.OnlineTimestamp.toString(), heatmap.getTimestamp());
+                startActivity(intent);
+              })
+              .setNegativeButton("Delete", (dialog, which) -> {
+                heatmapsRef.child(heatmap.getTimestamp()).removeValue().addOnSuccessListener(MainActivity.this, __ -> {
+                  Toast.makeText(MainActivity.this, "Heatmap successfully deleted.", Toast.LENGTH_SHORT).show();
+                  heatmapList.remove(position);
+                  onlineListAdapter.notifyDataSetChanged();
+                }).addOnFailureListener(MainActivity.this, exception -> {
+                  Toast.makeText(MainActivity.this, "Something went wrong while deleting the heatmap.", Toast.LENGTH_SHORT).show();
+                });
+              })
+              .show();
+    });
+  }
+
+  private void fillStats() {
+    FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+    BarChart intensityChart = findViewById(R.id.intensityDistributionChart);
+
+    if (currentUser == null) {
+      findViewById(R.id.not_logged_stats).setVisibility(View.VISIBLE);
+      findViewById(R.id.stats_desc).setVisibility(View.GONE);
+      intensityChart.setVisibility(View.GONE);
+      return;
+    }
+
+    findViewById(R.id.not_logged_stats).setVisibility(View.GONE);
+    findViewById(R.id.stats_desc).setVisibility(View.VISIBLE);
+
+    intensityChart.setVisibility(View.VISIBLE);
+    intensityChart.setDrawBarShadow(false);
+    intensityChart.setDrawValueAboveBar(true);
+    intensityChart.setHighlightPerTapEnabled(false);
+    intensityChart.setHighlightPerDragEnabled(false);
+    intensityChart.setDoubleTapToZoomEnabled(false);
+    intensityChart.getLegend().setEnabled(false);
+    intensityChart.getDescription().setEnabled(false);
+    XAxis xAxis = intensityChart.getXAxis();
+    xAxis.setLabelCount(3, false);
+    xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+    xAxis.setValueFormatter(new IndexAxisValueFormatter(new String[]{"Good", "Average", "Bad"}));
+    xAxis.setTextColor(Color.LTGRAY);
+    intensityChart.getAxisLeft().setTextColor(Color.LTGRAY);
+    intensityChart.getAxisRight().setTextColor(Color.LTGRAY);
+
+    List<BarEntry> entries = new ArrayList<>();
+    entries.add(new BarEntry(0f, 2f));
+    entries.add(new BarEntry(1f, 3f));
+    entries.add(new BarEntry(2f, 3f));
+    BarDataSet dataSet = new BarDataSet(entries, "Intensity Distribution");
+    dataSet.setColors(Color.GREEN, Color.YELLOW, Color.RED);
+    BarData barData = new BarData(dataSet);
+    barData.setBarWidth(0.5f);
+    intensityChart.setData(barData);
+    intensityChart.invalidate();
   }
 
   private void deleteHeatmap(String fileName) {

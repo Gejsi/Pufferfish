@@ -45,6 +45,7 @@ dependencies {
     implementation 'mil.nga.mgrs:mgrs-android:2.2.2'
     implementation 'mil.nga:mgrs:2.1.2'
     implementation 'com.squareup.picasso:picasso:2.8'
+    implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
 
     // firebase
     implementation platform('com.google.firebase:firebase-bom:32.1.1')
