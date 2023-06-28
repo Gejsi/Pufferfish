@@ -1,12 +1,13 @@
 <resources>
-    <!-- Reply Preference -->
-    <string-array name="reply_entries">
-        <item>Reply</item>
-        <item>Reply to all</item>
+    <string-array name="grid_entries">
+        <item>1 meter</item>
+        <item>10 meters</item>
+        <item>100 meters</item>
     </string-array>
 
-    <string-array name="reply_values">
-        <item>reply</item>
-        <item>reply_all</item>
+    <string-array name="grid_values">
+        <item>one</item>
+        <item>ten</item>
+        <item>hundred</item>
     </string-array>
 </resources>

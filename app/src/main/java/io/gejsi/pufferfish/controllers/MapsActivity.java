@@ -4,6 +4,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 
 import androidx.annotation.NonNull;
@@ -68,6 +69,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
   private Measurement.Type measurementType = Measurement.Type.Noise;
 
+  private GridType gridType = GridType.TEN_METER;
+
   public static final int PERMISSIONS_REQUEST_CODE = 1;
   @SuppressLint("InlinedApi")
   public static final String[] PERMISSIONS_REQUIRED = {
@@ -101,7 +104,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     if (getIntent().hasExtra(IntentKey.FileName.toString())) {
       // the measurements come from an existing local file
       existingFileName = getIntent().getStringExtra(IntentKey.FileName.toString());
-      measurements = HeatmapUtils.loadHeatmap(this, existingFileName).getMeasurements();
+      Heatmap heatmap = HeatmapUtils.loadHeatmap(this, existingFileName);
+      measurements = heatmap.getMeasurements();
+      gridType = heatmap.getGridType();
     } else if (getIntent().hasExtra(IntentKey.OnlineTimestamp.toString())) {
       // the measurements come from a heatmap saved online
       onlineTimestamp = getIntent().getStringExtra(IntentKey.OnlineTimestamp.toString());
@@ -110,11 +115,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
       heatmapFuture.thenAccept(heatmap -> {
         if (heatmap != null) {
           measurements = heatmap.getMeasurements();
+          gridType = heatmap.getGridType();
         }
       });
     } else {
       // the measurements are brand new, they will be later saved locally
       measurements = new HashMap<>();
+      gridType = SettingsUtils.getGridPreference(this);
     }
 
     // Retrieve the selected measurement type from intent extras
@@ -133,10 +140,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     saveBtn.setOnClickListener(v -> {
       boolean isSaved = false;
 
-      if (existingFileName != null) {
-        isSaved = HeatmapUtils.saveHeatmap(this, measurementType, measurements.values(), existingFileName);
-      } else if (onlineTimestamp != null) {
+      if (onlineTimestamp != null) {
         isSaved = HeatmapUtils.updateHeatmap(this, onlineTimestamp, measurements);
+      } else {
+        isSaved = HeatmapUtils.saveHeatmap(this, measurementType, measurements.values(), gridType, existingFileName);
       }
 
       if (isSaved) {
@@ -177,12 +184,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     grids.setColor(GridType.TEN_METER, Color.blue());
     tileProvider = MGRSTileProvider.create(this, grids);
     grids.enableAllLabelers();
-  }
-
-  @Override
-  protected void onPause() {
-    super.onPause();
-    // this.finish();
   }
 
   @Override
@@ -271,8 +272,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         // All required permissions are granted, continue with the app
         startHandlers();
       } else {
-        // At least one required permission is not granted, show an explanation dialog if
-        // necessary, then request the permissions again
+        // At least one required permission is not granted, show an explanation dialog,
+        // then request the permissions again
         boolean showRationale = false;
         for (String permission : permissions) {
           if (ActivityCompat.shouldShowRequestPermissionRationale(this, permission)) {
@@ -282,7 +283,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         if (showRationale) {
-          new AlertDialog.Builder(this).setTitle("Permission Required").setMessage("This app requires location, audio, Wi-Fi and LTE permissions to work properly.").setPositiveButton("OK", (dialog, which) -> requestPermissions()).setNegativeButton("Cancel", (dialog, which) -> finish()).setCancelable(false).show();
+          new AlertDialog.Builder(this)
+                  .setTitle("Permission Required")
+                  .setMessage("This app requires location, audio, Wi-Fi and LTE permissions to work properly.")
+                  .setPositiveButton("OK", (dialog, which) -> requestPermissions())
+                  .setNegativeButton("Cancel", (dialog, which) -> finish())
+                  .setCancelable(false)
+                  .show();
         } else {
           requestPermissions();
         }
@@ -314,7 +321,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     double lat = locationHandler.getLastKnownLocation().getLatitude();
     double lng = locationHandler.getLastKnownLocation().getLongitude();
     MGRS mgrs = tileProvider.getMGRS(new LatLng(lat, lng));
-    return mgrs.coordinate(GridType.TEN_METER);
+    return mgrs.coordinate(gridType);
   }
 
   private void recordMeasurement() {

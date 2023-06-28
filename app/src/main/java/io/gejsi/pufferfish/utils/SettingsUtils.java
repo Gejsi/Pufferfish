@@ -5,6 +5,8 @@ import android.content.SharedPreferences;
 
 import androidx.preference.PreferenceManager;
 
+import mil.nga.mgrs.grid.GridType;
+
 public class SettingsUtils {
   public static int getAverageLengthPreference(Context context) {
     SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
@@ -23,5 +25,18 @@ public class SettingsUtils {
   public static boolean getNotificationsPreference(Context context) {
     SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
     return sharedPreferences.getBoolean("notifications", false);
+  }
+
+  public static GridType getGridPreference(Context context) {
+    SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+    String pref = sharedPreferences.getString("grid_type", GridType.TEN_METER.toString());
+
+    if (pref.equals("one")) {
+      return GridType.METER;
+    } else if (pref.equals("hundred")) {
+      return GridType.HUNDRED_METER;
+    }
+
+    return GridType.TEN_METER;
   }
 }

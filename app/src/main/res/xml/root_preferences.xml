@@ -1,4 +1,5 @@
-<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
     <PreferenceCategory app:title="General">
 
@@ -11,16 +12,16 @@
         <EditTextPreference
             app:defaultValue="5"
             app:key="time"
-            app:title="Time interval between active measurements (in seconds)"
+            app:title="Time interval between measurements (in seconds)"
             app:useSimpleSummaryProvider="true" />
 
         <ListPreference
-            app:defaultValue="reply"
-            app:entries="@array/reply_entries"
-            app:entryValues="@array/reply_values"
-            app:key="reply"
-            app:title="@string/reply_title"
-            app:useSimpleSummaryProvider="true" />
+            app:defaultValue="one"
+            app:entries="@array/grid_entries"
+            app:entryValues="@array/grid_values"
+            app:key="grid_type"
+            app:title="Grid size"
+            android:summary="Choose an appropriate tile size depending on the number of measurements to average"/>
 
         <SwitchPreferenceCompat
             app:defaultValue="true"

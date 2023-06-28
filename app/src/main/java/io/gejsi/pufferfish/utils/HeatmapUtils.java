@@ -38,9 +38,10 @@ import java.util.stream.Collectors;
 import io.gejsi.pufferfish.R;
 import io.gejsi.pufferfish.models.Heatmap;
 import io.gejsi.pufferfish.models.Measurement;
+import mil.nga.mgrs.grid.GridType;
 
 public class HeatmapUtils {
-  public static boolean saveHeatmap(Activity activity, Measurement.Type measurementType, Collection<Measurement> measurements, String existingFile) {
+  public static boolean saveHeatmap(Activity activity, Measurement.Type measurementType, Collection<Measurement> measurements, GridType gridType, String existingFile) {
     if (measurements.isEmpty()) {
       Toast.makeText(activity, "No measurements have been taken yet. Cannot save the heatmap.", Toast.LENGTH_SHORT).show();
       return false;
@@ -79,6 +80,7 @@ public class HeatmapUtils {
         rootObject.put("timestamp", timestamp);
       }
       rootObject.put("type", measurementType);
+      rootObject.put("gridType", gridType);
       rootObject.put("measurements", measurementsArray);
     } catch (JSONException e) {
       e.printStackTrace();
@@ -120,6 +122,7 @@ public class HeatmapUtils {
     String timestamp = "";
     Measurement.Type measurementType = null;
     Map<String, Measurement> measurements = new HashMap<>();
+    GridType gridType = null;
 
     try {
       File file = new File(activity.getFilesDir(), fileName);
@@ -137,6 +140,7 @@ public class HeatmapUtils {
       JSONObject rootObject = new JSONObject(jsonString);
       timestamp = rootObject.getString("timestamp");
       measurementType = Measurement.Type.valueOf(rootObject.getString("type"));
+      gridType = GridType.valueOf(rootObject.getString("gridType"));
 
       JSONArray measurementsArray = rootObject.getJSONArray("measurements");
       for (int i = 0; i < measurementsArray.length(); i++) {
@@ -151,7 +155,7 @@ public class HeatmapUtils {
       Toast.makeText(activity, "Error while loading the heatmap", Toast.LENGTH_SHORT).show();
     }
 
-    return new Heatmap(timestamp, measurementType, measurements);
+    return new Heatmap(timestamp, measurementType, measurements, gridType);
   }
 
   public static List<String> getLocalFiles(String[] fileList) {
@@ -214,7 +218,7 @@ public class HeatmapUtils {
 
       @Override
       public void onCancelled(@NonNull DatabaseError databaseError) {
-        Toast.makeText(activity, "Error syncing the heatmap.", Toast.LENGTH_SHORT).show();
+        Toast.makeText(activity, "Error while syncing the heatmap.", Toast.LENGTH_SHORT).show();
       }
     });
   }
