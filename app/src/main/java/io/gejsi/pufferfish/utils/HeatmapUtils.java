@@ -2,6 +2,7 @@ package io.gejsi.pufferfish.utils;
 
 import android.app.Activity;
 import android.graphics.Color;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -321,6 +322,11 @@ public class HeatmapUtils {
         barData.setBarWidth(0.5f);
         intensityChart.setData(barData);
         intensityChart.invalidate();
+
+        ((TextView) activity.findViewById(R.id.goodMeasurementsText)).setText("Number of good measurements: " + goodNum);
+        ((TextView) activity.findViewById(R.id.averageMeasurementsText)).setText("Number of average measurements: " + averageNum);
+        ((TextView) activity.findViewById(R.id.badMeasurementsText)).setText("Number of bad/poor measurements: " + badNum);
+        ((TextView) activity.findViewById(R.id.totalMeasurementsText)).setText("Total number of measurements: " + (int) totalMeasurements);
       }
     });
   }
