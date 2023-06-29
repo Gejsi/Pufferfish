@@ -38,6 +38,7 @@ import io.gejsi.pufferfish.R;
 import io.gejsi.pufferfish.databinding.ActivityMainBinding;
 import io.gejsi.pufferfish.models.Heatmap;
 import io.gejsi.pufferfish.models.IntentKey;
+import io.gejsi.pufferfish.models.Measurement;
 import io.gejsi.pufferfish.utils.HeatmapUtils;
 
 public class MainActivity extends AppCompatActivity {
@@ -247,6 +248,7 @@ public class MainActivity extends AppCompatActivity {
     intensityChart.setDoubleTapToZoomEnabled(false);
     intensityChart.getLegend().setEnabled(false);
     intensityChart.getDescription().setEnabled(false);
+    intensityChart.setExtraOffsets(5, 5, 5, 15);
     XAxis xAxis = intensityChart.getXAxis();
     xAxis.setLabelCount(3, false);
     xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
@@ -255,16 +257,58 @@ public class MainActivity extends AppCompatActivity {
     intensityChart.getAxisLeft().setTextColor(Color.LTGRAY);
     intensityChart.getAxisRight().setTextColor(Color.LTGRAY);
 
-    List<BarEntry> entries = new ArrayList<>();
-    entries.add(new BarEntry(0f, 2f));
-    entries.add(new BarEntry(1f, 3f));
-    entries.add(new BarEntry(2f, 3f));
-    BarDataSet dataSet = new BarDataSet(entries, "Intensity Distribution");
-    dataSet.setColors(Color.GREEN, Color.YELLOW, Color.RED);
-    BarData barData = new BarData(dataSet);
-    barData.setBarWidth(0.5f);
-    intensityChart.setData(barData);
-    intensityChart.invalidate();
+    FirebaseDatabase database = FirebaseDatabase.getInstance(getString(R.string.db));
+    DatabaseReference heatmapsRef = database.getReference("heatmaps").child(currentUser.getUid());
+
+    CompletableFuture<DataSnapshot> dataSnapshotFuture = new CompletableFuture<>();
+    heatmapsRef.addValueEventListener(new ValueEventListener() {
+      @Override
+      public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+        dataSnapshotFuture.complete(dataSnapshot);
+      }
+
+      @Override
+      public void onCancelled(@NonNull DatabaseError databaseError) {
+        Toast.makeText(MainActivity.this, "Error while retrieving the heatmap.", Toast.LENGTH_SHORT).show();
+      }
+    });
+
+
+    dataSnapshotFuture.thenAccept(dataSnapshot -> {
+      int goodNum = 0;
+      int averageNum = 0;
+      int badNum = 0;
+
+      for (DataSnapshot heatmapSnapshot : dataSnapshot.getChildren()) {
+        Heatmap heatmap = heatmapSnapshot.getValue(Heatmap.class);
+        if (heatmap != null && heatmap.getMeasurementType() == Measurement.Type.Noise) {
+          for (Measurement measurement : heatmap.getMeasurements().values()) {
+            if (measurement.getIntensity() == Measurement.Intensity.Good)
+              goodNum++;
+            else if (measurement.getIntensity() == Measurement.Intensity.Average)
+              averageNum++;
+            else if (measurement.getIntensity() == Measurement.Intensity.Poor)
+              badNum++;
+          }
+        }
+      }
+
+      float totalMeasurements = goodNum + averageNum + badNum;
+      float goodPercentage = (goodNum / totalMeasurements) * 100;
+      float averagePercentage = (averageNum / totalMeasurements) * 100;
+      float badPercentage = (badNum / totalMeasurements) * 100;
+
+      List<BarEntry> entries = new ArrayList<>();
+      entries.add(new BarEntry(0f, goodPercentage));
+      entries.add(new BarEntry(1f, averagePercentage));
+      entries.add(new BarEntry(2f, badPercentage));
+      BarDataSet dataSet = new BarDataSet(entries, "Intensity Distribution");
+      dataSet.setColors(Color.GREEN, Color.YELLOW, Color.RED);
+      BarData barData = new BarData(dataSet);
+      barData.setBarWidth(0.5f);
+      intensityChart.setData(barData);
+      intensityChart.invalidate();
+    });
   }
 
   private void deleteHeatmap(String fileName) {

@@ -4,8 +4,8 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -318,6 +318,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   }
 
   private String getCurrentCoordinate() {
+    if (locationHandler.getLastKnownLocation() == null) {
+      Toast.makeText(this, "Unable to retrieve current position. Please, move around.", Toast.LENGTH_SHORT).show();
+      return null;
+    }
+
     double lat = locationHandler.getLastKnownLocation().getLatitude();
     double lng = locationHandler.getLastKnownLocation().getLongitude();
     MGRS mgrs = tileProvider.getMGRS(new LatLng(lat, lng));
@@ -326,6 +331,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
   private void recordMeasurement() {
     String coordinate = getCurrentCoordinate();
+    if (coordinate == null) return;
+
     Measurement measurement = new Measurement(coordinate);
     measurement.setType(measurementType);
     measurement.setIntensity(sampler.getAverageData());
@@ -349,7 +356,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
       @Override
       public void run() {
         // send notifications if a tile hasn't been visited yet
-        if (!measurements.containsKey(getCurrentCoordinate()) && notificationsEnabled) {
+        if (getCurrentCoordinate() != null && !measurements.containsKey(getCurrentCoordinate()) && notificationsEnabled) {
           notificationUtils.sendNotification();
         }
 
