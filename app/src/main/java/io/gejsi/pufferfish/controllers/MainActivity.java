@@ -4,8 +4,11 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.ListView;
+import android.widget.Spinner;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
 
@@ -16,9 +19,6 @@ import androidx.appcompat.widget.Toolbar;
 
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.components.XAxis;
-import com.github.mikephil.charting.data.BarData;
-import com.github.mikephil.charting.data.BarDataSet;
-import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
@@ -121,8 +121,8 @@ public class MainActivity extends AppCompatActivity {
     super.onResume();
 
     fillLocalList();
-    // fillOnlineList();
-    // fillStats();
+    fillOnlineList();
+    fillStats();
   }
 
   private void fillLocalList() {
@@ -143,7 +143,7 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
               })
               .setNegativeButton("Delete", (dialog, which) -> {
-                deleteHeatmap(fileName);
+                MainActivity.this.deleteFile(fileName);
                 // update the ListView
                 files.remove(position);
                 localListAdapter.notifyDataSetChanged();
@@ -237,9 +237,6 @@ public class MainActivity extends AppCompatActivity {
       return;
     }
 
-    findViewById(R.id.not_logged_stats).setVisibility(View.GONE);
-    findViewById(R.id.stats_desc).setVisibility(View.VISIBLE);
-
     intensityChart.setVisibility(View.VISIBLE);
     intensityChart.setDrawBarShadow(false);
     intensityChart.setDrawValueAboveBar(true);
@@ -257,61 +254,28 @@ public class MainActivity extends AppCompatActivity {
     intensityChart.getAxisLeft().setTextColor(Color.LTGRAY);
     intensityChart.getAxisRight().setTextColor(Color.LTGRAY);
 
-    FirebaseDatabase database = FirebaseDatabase.getInstance(getString(R.string.db));
-    DatabaseReference heatmapsRef = database.getReference("heatmaps").child(currentUser.getUid());
+    findViewById(R.id.not_logged_stats).setVisibility(View.GONE);
+    findViewById(R.id.stats_desc).setVisibility(View.VISIBLE);
 
-    CompletableFuture<DataSnapshot> dataSnapshotFuture = new CompletableFuture<>();
-    heatmapsRef.addValueEventListener(new ValueEventListener() {
+    Spinner spinner = findViewById(R.id.sampler_menu);
+    ArrayAdapter<CharSequence> spinnerAdapter = ArrayAdapter.createFromResource(
+            this,
+            R.array.sampled_stat,
+            android.R.layout.simple_spinner_item
+    );
+    spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+    spinner.setAdapter(spinnerAdapter);
+
+    spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
       @Override
-      public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-        dataSnapshotFuture.complete(dataSnapshot);
+      public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        String selectedItem = parent.getItemAtPosition(position).toString();
+        HeatmapUtils.drawChart(MainActivity.this, intensityChart, Measurement.Type.valueOf(selectedItem));
       }
 
       @Override
-      public void onCancelled(@NonNull DatabaseError databaseError) {
-        Toast.makeText(MainActivity.this, "Error while retrieving the heatmap.", Toast.LENGTH_SHORT).show();
+      public void onNothingSelected(AdapterView<?> parent) {
       }
     });
-
-
-    dataSnapshotFuture.thenAccept(dataSnapshot -> {
-      int goodNum = 0;
-      int averageNum = 0;
-      int badNum = 0;
-
-      for (DataSnapshot heatmapSnapshot : dataSnapshot.getChildren()) {
-        Heatmap heatmap = heatmapSnapshot.getValue(Heatmap.class);
-        if (heatmap != null && heatmap.getMeasurementType() == Measurement.Type.Noise) {
-          for (Measurement measurement : heatmap.getMeasurements().values()) {
-            if (measurement.getIntensity() == Measurement.Intensity.Good)
-              goodNum++;
-            else if (measurement.getIntensity() == Measurement.Intensity.Average)
-              averageNum++;
-            else if (measurement.getIntensity() == Measurement.Intensity.Poor)
-              badNum++;
-          }
-        }
-      }
-
-      float totalMeasurements = goodNum + averageNum + badNum;
-      float goodPercentage = (goodNum / totalMeasurements) * 100;
-      float averagePercentage = (averageNum / totalMeasurements) * 100;
-      float badPercentage = (badNum / totalMeasurements) * 100;
-
-      List<BarEntry> entries = new ArrayList<>();
-      entries.add(new BarEntry(0f, goodPercentage));
-      entries.add(new BarEntry(1f, averagePercentage));
-      entries.add(new BarEntry(2f, badPercentage));
-      BarDataSet dataSet = new BarDataSet(entries, "Intensity Distribution");
-      dataSet.setColors(Color.GREEN, Color.YELLOW, Color.RED);
-      BarData barData = new BarData(dataSet);
-      barData.setBarWidth(0.5f);
-      intensityChart.setData(barData);
-      intensityChart.invalidate();
-    });
-  }
-
-  private void deleteHeatmap(String fileName) {
-    this.deleteFile(fileName);
   }
 }

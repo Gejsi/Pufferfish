@@ -10,4 +10,10 @@
         <item>ten</item>
         <item>hundred</item>
     </string-array>
+
+    <string-array name="sampled_stat">
+        <item>Noise</item>
+        <item>WiFi</item>
+        <item>LTE</item>
+    </string-array>
 </resources>

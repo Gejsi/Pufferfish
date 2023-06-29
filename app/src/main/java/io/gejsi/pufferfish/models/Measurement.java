@@ -46,11 +46,11 @@ public class Measurement {
     if (type == Type.Noise) {
       if (data < 10) intensity = Intensity.Good;
       else if (data >= 10 && data <= 30) intensity = Intensity.Average;
-      else intensity = Intensity.Poor;
+      else intensity = Intensity.Bad;
     } else if (type == Type.WiFi || type == Type.LTE) {
       if (data >= 3) intensity = Intensity.Good;
       else if (data == 2) intensity = Intensity.Average;
-      else intensity = Intensity.Poor;
+      else intensity = Intensity.Bad;
     } else {
       throw new IllegalArgumentException("Cannot set intensity since no measurement type has been provided.");
     }
@@ -59,7 +59,7 @@ public class Measurement {
   public enum Intensity {
     Good,
     Average,
-    Poor
+    Bad
   }
 
   public enum Type {

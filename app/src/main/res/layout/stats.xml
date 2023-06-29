@@ -23,6 +23,14 @@
         android:padding="16dp"
         android:text="Statistics for your synced heatmaps." />
 
+    <Spinner
+        android:id="@+id/sampler_menu"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:layout_marginBottom="8dp"/>
+
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">

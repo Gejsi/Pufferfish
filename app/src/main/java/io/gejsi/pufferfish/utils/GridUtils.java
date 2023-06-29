@@ -52,7 +52,7 @@ public class GridUtils {
     Polygon polygon = map.addPolygon(new PolygonOptions().addAll(vertices).strokeColor(0x00000000));
     polygons.put(coordinate, polygon);
 
-    if (intensity == Measurement.Intensity.Poor) {
+    if (intensity == Measurement.Intensity.Bad) {
       polygon.setFillColor(0x50FC0303);
     } else if (intensity == Measurement.Intensity.Average) {
       polygon.setFillColor(0x50FCBE03);
