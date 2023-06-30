@@ -21,6 +21,7 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -34,6 +35,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import io.gejsi.pufferfish.R;
 import io.gejsi.pufferfish.models.Heatmap;
@@ -256,5 +259,30 @@ public class HeatmapUtils {
     heatmapsRef.addValueEventListener(valueEventListener);
 
     return heatmapFuture;
+  }
+
+  public static File createZipFile(Activity activity, List<String> jsonFiles) throws IOException {
+    String zipFileName = "heatmaps_dump.zip";
+    File zipFile = new File(activity.getCacheDir(), zipFileName);
+
+    FileOutputStream fileOutputStream = new FileOutputStream(zipFile);
+    ZipOutputStream zipOutputStream = new ZipOutputStream(fileOutputStream);
+
+    byte[] buffer = new byte[1024];
+    int length;
+    for (String jsonFile : jsonFiles) {
+      FileInputStream fileInputStream = activity.openFileInput(jsonFile);
+      ZipEntry zipEntry = new ZipEntry(jsonFile);
+      zipOutputStream.putNextEntry(zipEntry);
+      while ((length = fileInputStream.read(buffer)) > 0) {
+        zipOutputStream.write(buffer, 0, length);
+      }
+      fileInputStream.close();
+    }
+
+    zipOutputStream.close();
+    fileOutputStream.close();
+
+    return zipFile;
   }
 }
