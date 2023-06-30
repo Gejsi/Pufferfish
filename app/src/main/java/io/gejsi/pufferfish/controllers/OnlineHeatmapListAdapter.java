@@ -1,5 +1,6 @@
 package io.gejsi.pufferfish.controllers;
 
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -12,11 +13,12 @@ import android.widget.TextView;
 import java.util.List;
 
 import io.gejsi.pufferfish.R;
+import io.gejsi.pufferfish.models.Heatmap;
 import io.gejsi.pufferfish.models.Measurement;
 
-public class HeatmapListAdapter extends ArrayAdapter<String> {
-  public HeatmapListAdapter(Context context, List<String> fileNames) {
-    super(context, 0, fileNames);
+public class OnlineHeatmapListAdapter extends ArrayAdapter<Heatmap> {
+  public OnlineHeatmapListAdapter(Context context, List<Heatmap> heatmaps) {
+    super(context, 0, heatmaps);
   }
 
   @SuppressLint("SetTextI18n")
@@ -29,10 +31,9 @@ public class HeatmapListAdapter extends ArrayAdapter<String> {
     ImageView iconImageView = convertView.findViewById(R.id.icon);
     TextView fileNameTextView = convertView.findViewById(R.id.fileName);
 
-    String fileName = getItem(position);
-    String[] fileParts = fileName.split("_");
+    Heatmap heatmap = getItem(position);
 
-    Measurement.Type measurementType = Measurement.Type.valueOf(fileParts[1]);
+    Measurement.Type measurementType = heatmap.getMeasurementType();
     if (measurementType == Measurement.Type.Noise)
       iconImageView.setImageResource(R.drawable.ic_sound);
     else if (measurementType == Measurement.Type.WiFi)
@@ -40,8 +41,9 @@ public class HeatmapListAdapter extends ArrayAdapter<String> {
     else if (measurementType == Measurement.Type.LTE)
       iconImageView.setImageResource(R.drawable.ic_lte);
 
-    String date = fileParts[2];
-    String time = fileParts[3].substring(0, fileParts[3].length() - 5);
+    String[] timestampParts = heatmap.getTimestamp().split("_");
+    String date = timestampParts[0];
+    String time = timestampParts[1];
     fileNameTextView.setText(date + " · " + time);
 
     return convertView;

@@ -32,6 +32,7 @@ public abstract class LocationUtils {
       public void onLocationChanged(Location location) {
         Log.d("Location", "Location changed" + location);
         lastKnownLocation = location;
+        onChangedLocation(location);
       }
 
       @Override
@@ -48,6 +49,7 @@ public abstract class LocationUtils {
     };
   }
 
+  public abstract void onChangedLocation(Location location);
   public abstract void onChangedStatus(String provider, int status, Bundle extras);
   public abstract void onDisabledProvider(String provider);
 

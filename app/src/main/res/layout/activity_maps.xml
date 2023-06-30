@@ -50,6 +50,18 @@
             map:uiCompass="true" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/my_loc"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:contentDescription="@string/get_current_location"
+            android:src="@drawable/ic_location"
+            app:fabSize="mini"
+            app:backgroundTint="@color/gray_300"
+            app:layout_anchor="@id/map"
+            app:layout_anchorGravity="top|end" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/background"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

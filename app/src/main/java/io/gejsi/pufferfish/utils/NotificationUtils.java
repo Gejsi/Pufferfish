@@ -22,7 +22,7 @@ public class NotificationUtils {
 
   public void createNotificationChannel() {
     String CHANNEL_ID = "bg";
-    // Create the NotificationChannel, but only on API 26+ because
+    // create the NotificationChannel, but only on API 26+ because
     // the NotificationChannel class is new and not in the support library
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       CharSequence name = "Background measurements";
@@ -44,7 +44,7 @@ public class NotificationUtils {
   @SuppressLint("MissingPermission")
   public void sendNotification() {
     // id is set as 0 to avoid spamming different notifications,
-    // since they all display the same content.
+    // because they all display the same content.
     NotificationManagerCompat.from(context).notify(0, builder.build());
   }
 }

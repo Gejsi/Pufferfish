@@ -3,8 +3,10 @@ package io.gejsi.pufferfish.controllers;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
+import android.location.Location;
 import android.os.Bundle;
 import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -28,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.gejsi.pufferfish.R;
@@ -36,6 +39,8 @@ import io.gejsi.pufferfish.handlers.AudioHandler;
 import io.gejsi.pufferfish.handlers.LocationHandler;
 import io.gejsi.pufferfish.handlers.LteHandler;
 import io.gejsi.pufferfish.handlers.WifiHandler;
+import io.gejsi.pufferfish.models.Heatmap;
+import io.gejsi.pufferfish.models.IntentKey;
 import io.gejsi.pufferfish.models.Measurement;
 import io.gejsi.pufferfish.models.MeasurementSampler;
 import io.gejsi.pufferfish.utils.GridUtils;
@@ -57,7 +62,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
   private Map<String, Measurement> measurements;
 
+  /** Used if a **local** heatmap is being edited rather than being created. */
+  private volatile String existingFileName = null;
+
+  /** Used if an **online** heatmap is being edited rather than being created. */
+  private volatile String onlineTimestamp = null;
+
   private Measurement.Type measurementType = Measurement.Type.Noise;
+
+  private GridType gridType = GridType.TEN_METER;
 
   public static final int PERMISSIONS_REQUEST_CODE = 1;
   @SuppressLint("InlinedApi")
@@ -81,27 +94,43 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   private Timer backgroundRecordingTimer;
   private NotificationUtils notificationUtils;
 
+  private AtomicBoolean isBackgroundModeEnabled = new AtomicBoolean(false);
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
     // Retrieve location from saved instance state.
-    // TODO: maybe add this info in the files as well, so they are different for each heatmap
     if (savedInstanceState != null) {
       locationHandler.setLastKnownLocation(savedInstanceState.getParcelable(KEY_LOCATION));
     }
 
-    // Retrieve the measurements from intent extras
-    if (getIntent().hasExtra("fileName")) {
-      String fileName = getIntent().getStringExtra("fileName");
-      measurements = HeatmapUtils.loadHeatmap(this, fileName);
+    if (getIntent().hasExtra(IntentKey.FileName.toString())) {
+      // the measurements come from an existing local file
+      existingFileName = getIntent().getStringExtra(IntentKey.FileName.toString());
+      Heatmap heatmap = HeatmapUtils.loadHeatmap(this, existingFileName);
+      measurements = heatmap.getMeasurements();
+      gridType = heatmap.getGridType();
+    } else if (getIntent().hasExtra(IntentKey.OnlineTimestamp.toString())) {
+      // the measurements come from a heatmap saved online
+      onlineTimestamp = getIntent().getStringExtra(IntentKey.OnlineTimestamp.toString());
+      CompletableFuture<Heatmap> heatmapFuture = HeatmapUtils.fetchHeatmap(this, onlineTimestamp);
+
+      heatmapFuture.thenAccept(heatmap -> {
+        if (heatmap != null) {
+          measurements = heatmap.getMeasurements();
+          gridType = heatmap.getGridType();
+        }
+      });
     } else {
+      // the measurements are brand new, they will be later saved locally
       measurements = new HashMap<>();
+      gridType = SettingsUtils.getGridPreference(this);
     }
 
     // Retrieve the selected measurement type from intent extras
-    if (getIntent().hasExtra("measurementType")) {
-      String selectedMeasurementType = getIntent().getStringExtra("measurementType");
+    if (getIntent().hasExtra(IntentKey.MeasurementType.toString())) {
+      String selectedMeasurementType = getIntent().getStringExtra(IntentKey.MeasurementType.toString());
       measurementType = Measurement.Type.valueOf(selectedMeasurementType);
     }
 
@@ -113,8 +142,26 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     Button saveBtn = binding.btnSave;
     saveBtn.setOnClickListener(v -> {
-      HeatmapUtils.saveHeatmap(this, measurementType, measurements.values());
-      this.finish();
+      boolean isSaved;
+
+      if (onlineTimestamp != null) {
+        isSaved = HeatmapUtils.updateHeatmap(this, onlineTimestamp, measurements);
+      } else {
+        isSaved = HeatmapUtils.saveHeatmap(this, measurementType, measurements.values(), gridType, existingFileName);
+      }
+
+      if (isSaved) {
+        this.finish();
+      }
+    });
+
+    FloatingActionButton locationBtn = binding.myLoc;
+    locationBtn.setOnClickListener(__ -> {
+      if (locationHandler.getLastKnownLocation() == null) {
+        Toast.makeText(this, "Unable to retrieve current position. Please, move around.", Toast.LENGTH_SHORT).show();
+      }
+
+      locationHandler.getDeviceLocation(gridType);
     });
 
     gridUtils = new GridUtils();
@@ -122,7 +169,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     FloatingActionButton backgroundBtn = binding.background;
     TooltipCompat.setTooltipText(backgroundBtn, "Save measurements in background");
-    AtomicBoolean isBackgroundModeEnabled = new AtomicBoolean(false);
     backgroundBtn.setOnClickListener(view -> {
       if (isBackgroundModeEnabled.get()) {
         enableUIInteraction();
@@ -138,9 +184,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     FloatingActionButton recordBtn = binding.record;
     TooltipCompat.setTooltipText(recordBtn, "Save measurement");
-    recordBtn.setOnClickListener(view -> {
-      recordMeasurement();
-    });
+    recordBtn.setOnClickListener(view -> recordMeasurement());
 
     // Obtain the SupportMapFragment and get notified when the map is ready to be used.
     SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
@@ -148,16 +192,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
       mapFragment.getMapAsync(this);
     }
 
+    // Create the grid
     Grids grids = Grids.create();
     grids.setColor(GridType.TEN_METER, Color.blue());
     tileProvider = MGRSTileProvider.create(this, grids);
     grids.enableAllLabelers();
-  }
-
-  @Override
-  protected void onPause() {
-    super.onPause();
-    // this.finish();
   }
 
   @Override
@@ -186,7 +225,23 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   @Override
   public void onMapReady(@NonNull GoogleMap googleMap) {
     map = googleMap;
-    locationHandler = new LocationHandler(this, map);
+    map.getUiSettings().setMyLocationButtonEnabled(false);
+
+    boolean notificationsEnabled = SettingsUtils.getNotificationsPreference(this);
+    locationHandler = new LocationHandler(this, map) {
+      @Override
+      public void onLocationChanged(Location location) {
+        String coordinate = getCurrentCoordinate();
+        if (
+                coordinate != null
+                && !measurements.containsKey(coordinate)
+                && notificationsEnabled
+                && isBackgroundModeEnabled.get()
+        ) {
+          notificationUtils.sendNotification();
+        }
+      }
+    };
 
     if (measurementType == Measurement.Type.Noise) {
       sampler = new AudioHandler(this);
@@ -246,8 +301,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         // All required permissions are granted, continue with the app
         startHandlers();
       } else {
-        // At least one required permission is not granted, show an explanation dialog if
-        // necessary, then request the permissions again
+        // At least one required permission is not granted, show an explanation dialog,
+        // then request the permissions again
         boolean showRationale = false;
         for (String permission : permissions) {
           if (ActivityCompat.shouldShowRequestPermissionRationale(this, permission)) {
@@ -257,7 +312,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         if (showRationale) {
-          new AlertDialog.Builder(this).setTitle("Permission Required").setMessage("This app requires location, audio, Wi-Fi and LTE permissions to work properly.").setPositiveButton("OK", (dialog, which) -> requestPermissions()).setNegativeButton("Cancel", (dialog, which) -> finish()).setCancelable(false).show();
+          new AlertDialog.Builder(this)
+                  .setTitle("Permission Required")
+                  .setMessage("This app requires location, audio and notification permissions to work properly.")
+                  .setPositiveButton("OK", (dialog, which) -> requestPermissions())
+                  .setNegativeButton("Cancel", (dialog, which) -> finish())
+                  .setCancelable(false)
+                  .show();
         } else {
           requestPermissions();
         }
@@ -269,7 +330,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
   private void startHandlers() {
     locationHandler.setLocationPermissionGranted(true);
-    locationHandler.start();
+    locationHandler.start(gridType);
     sampler.start();
   }
 
@@ -286,20 +347,27 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   }
 
   private String getCurrentCoordinate() {
+    if (locationHandler.getLastKnownLocation() == null) {
+      Toast.makeText(this, "Unable to retrieve current position. Please, move around.", Toast.LENGTH_SHORT).show();
+      return null;
+    }
+
     double lat = locationHandler.getLastKnownLocation().getLatitude();
     double lng = locationHandler.getLastKnownLocation().getLongitude();
     MGRS mgrs = tileProvider.getMGRS(new LatLng(lat, lng));
-    return mgrs.coordinate(GridType.TEN_METER);
+    return mgrs.coordinate(gridType);
   }
 
   private void recordMeasurement() {
     String coordinate = getCurrentCoordinate();
+    if (coordinate == null) return;
+
     Measurement measurement = new Measurement(coordinate);
     measurement.setType(measurementType);
     measurement.setIntensity(sampler.getAverageData());
 
     try {
-      gridUtils.fillTile(this, map, measurement);
+      gridUtils.fillTile(this, map, measurement, isBackgroundModeEnabled.get());
     } catch (ParseException e) {
       throw new RuntimeException(e);
     }
@@ -312,15 +380,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   }
 
   public void startBackgroundRecording() {
-    boolean notificationsEnabled = SettingsUtils.getNotificationsPreference(this);
     TimerTask backgroundRecordingTask = new TimerTask() {
       @Override
       public void run() {
-        // send notifications if a tile hasn't been visited yet
-        if (!measurements.containsKey(getCurrentCoordinate()) && notificationsEnabled) {
-          notificationUtils.sendNotification();
-        }
-
         runOnUiThread(() -> recordMeasurement());
       }
     };

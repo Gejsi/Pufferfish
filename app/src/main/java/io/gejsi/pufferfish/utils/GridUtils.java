@@ -23,7 +23,7 @@ public class GridUtils {
   private Map<String, Polygon> polygons = new HashMap<>();
   private Map<String, Long> timestamps = new HashMap<>();
 
-  public void fillTile(Activity activity, GoogleMap map, Measurement measurement) throws ParseException {
+  public void fillTile(Activity activity, GoogleMap map, Measurement measurement, boolean isBackgroundModeEnabled) throws ParseException {
     String coordinate = measurement.getCoordinate();
     Measurement.Intensity intensity = measurement.getIntensity();
     int timePreference = SettingsUtils.getTimePreference(activity);
@@ -31,7 +31,7 @@ public class GridUtils {
     // check if enough time has passed since last fill
     long currentTime = System.currentTimeMillis();
     Long lastFillTime = timestamps.get(coordinate);
-    if (lastFillTime != null && (currentTime - lastFillTime) < timePreference) {
+    if (lastFillTime != null && !isBackgroundModeEnabled && (currentTime - lastFillTime) < timePreference) {
       new AlertDialog.Builder(activity)
               .setTitle("Cannot fill tile")
               .setMessage("Not enough time has passed since last fill. Check your settings to tweak timings.")
@@ -52,7 +52,7 @@ public class GridUtils {
     Polygon polygon = map.addPolygon(new PolygonOptions().addAll(vertices).strokeColor(0x00000000));
     polygons.put(coordinate, polygon);
 
-    if (intensity == Measurement.Intensity.Poor) {
+    if (intensity == Measurement.Intensity.Bad) {
       polygon.setFillColor(0x50FC0303);
     } else if (intensity == Measurement.Intensity.Average) {
       polygon.setFillColor(0x50FCBE03);
@@ -63,7 +63,7 @@ public class GridUtils {
 
   public void drawHeatmap(Activity activity, GoogleMap map, Collection<Measurement> measurements) throws ParseException {
     for (Measurement measurement : measurements) {
-      this.fillTile(activity, map, measurement);
+      this.fillTile(activity, map, measurement, false);
     }
   }
 

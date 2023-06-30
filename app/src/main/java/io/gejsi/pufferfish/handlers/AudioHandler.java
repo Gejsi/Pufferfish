@@ -49,7 +49,6 @@ public class AudioHandler extends MeasurementSampler {
 
         double[] data = this.getData();
         data[n % averageLength] = db;
-        // Log.d("Test", "start: " + db + " " + Thread.currentThread().getName());
       }
     }).start();
   }

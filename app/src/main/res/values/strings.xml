@@ -2,11 +2,25 @@
     <string name="app_name">Pufferfish</string>
     <string name="title_activity_maps">MapsActivity</string>
     <string name="title_activity_main">MainActivity</string>
-    <string name="action_settings">Settings</string>
-    <string name="default_info_title">Default Location</string>
-    <string name="default_info_snippet">No places found, because location permission is disabled.</string>
-    <string name="option_get_place">Get place</string>
-    <string name="pick_place">Choose a place</string>
+    <string name="settings">Settings</string>
+    <string name="db">https://pufferfish-382810-default-rtdb.europe-west1.firebasedatabase.app/</string>
+
+    <string name="title_activity_settings">SettingsActivity</string>
+    <string name="attachment_summary_off">Only download attachments when manually requested</string>
+    <string name="save_heatmap">SAVE</string>
+    <string name="get_current_location">Get current location</string>
+    <string name="record_measurements_in_background">Record measurements in background</string>
+    <string name="record_measurement">Record measurement</string>
+    <string name="create_a_heatmap">Create a heatmap</string>
+    <string name="create_a_heatmap_in_background">Create a heatmap in background</string>
+    <string name="start_recording_measurements">Start recording measurements</string>
+    <string name="my_profile">My profile</string>
+    <string name="export">Export</string>
+    <string name="import_text">Import</string>
+    <string name="tab_local">Local</string>
+    <string name="tab_online">Online</string>
+    <string name="tab_stats">Stats</string>
+    <string name="your_locally_saved_heatmaps">Your locally saved heatmaps.</string>
 
     <string name="large_text">
         "Material is the metaphor.\n\n"
@@ -97,27 +111,4 @@
         "For example, position the FAB to one side of stream of a cards so the FAB won’t interfere "
         "when a user tries to pick up one of cards.\n\n"
     </string>
-    <string name="title_activity_settings">SettingsActivity</string>
-
-    <!-- Preference Titles -->
-    <string name="messages_header">Messages</string>
-    <string name="sync_header">Sync</string>
-
-    <!-- Messages Preferences -->
-    <string name="signature_title">Your signature</string>
-    <string name="reply_title">Default reply action</string>
-
-    <!-- Sync Preferences -->
-    <string name="sync_title">Sync email periodically</string>
-    <string name="attachment_title">Download incoming attachments</string>
-    <string name="attachment_summary_on">Automatically download attachments for incoming emails
-    </string>
-    <string name="attachment_summary_off">Only download attachments when manually requested</string>
-    <string name="save_heatmap">SAVE</string>
-    <string name="get_current_location">Get current location</string>
-    <string name="record_measurements_in_background">Record measurements in background</string>
-    <string name="record_measurement">Record measurement</string>
-    <string name="create_a_heatmap">Create a heatmap</string>
-    <string name="create_a_heatmap_in_background">Create a heatmap in background</string>
-    <string name="start_recording_measurements">Start recording measurements</string>
 </resources>

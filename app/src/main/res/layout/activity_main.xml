@@ -8,6 +8,7 @@
     tools:context=".controllers.MainActivity">
 
     <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
@@ -16,34 +17,104 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="?attr/colorPrimary"
-            app:titleTextColor="?attr/colorOnPrimary"
             app:layout_collapseMode="pin"
-            app:title="@string/app_name">
+            app:title="@string/app_name"
+            app:titleTextColor="?attr/colorOnPrimary">
 
             <ImageButton
                 android:id="@+id/settings_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/ic_settings"
-                android:padding="8dp"
+                android:layout_gravity="end"
                 android:layout_marginEnd="8dp"
                 android:background="?attr/selectableItemBackground"
-                android:layout_gravity="end"/>
+                android:padding="8dp"
+                android:src="@drawable/ic_settings"
+                android:contentDescription="@string/settings" />
+
+            <ImageButton
+                android:id="@+id/me"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginEnd="8dp"
+                android:background="?attr/selectableItemBackground"
+                android:padding="8dp"
+                android:src="@drawable/ic_person"
+                android:contentDescription="@string/my_profile" />
+
+            <ImageButton
+                android:id="@+id/exportButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginEnd="8dp"
+                android:background="?attr/selectableItemBackground"
+                android:padding="8dp"
+                android:src="@drawable/ic_export"
+                android:contentDescription="@string/export" />
+
+            <ImageButton
+                android:id="@+id/importButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginEnd="8dp"
+                android:background="?attr/selectableItemBackground"
+                android:padding="8dp"
+                android:src="@drawable/ic_import"
+                android:contentDescription="@string/import_text" />
         </androidx.appcompat.widget.Toolbar>
 
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tab_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/colorPrimary"
+            app:tabIndicatorColor="?attr/colorOnPrimary"
+            app:tabIndicatorHeight="2dp"
+            app:tabSelectedTextColor="?attr/colorOnPrimary">
+
+            <com.google.android.material.tabs.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/tab_local" />
+
+            <com.google.android.material.tabs.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/tab_online" />
+
+            <com.google.android.material.tabs.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/tab_stats" />
+        </com.google.android.material.tabs.TabLayout>
 
     </com.google.android.material.appbar.AppBarLayout>
 
-    <include layout="@layout/content_scrolling" android:id="@+id/content" />
+
+    <ViewFlipper
+        android:id="@+id/view_flipper"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="98dp">
+
+        <include layout="@layout/local_heatmaps" />
+
+        <include layout="@layout/online_heatmaps" />
+
+        <include layout="@layout/stats" />
+    </ViewFlipper>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
+        android:contentDescription="@string/create_a_heatmap"
         android:src="@android:drawable/ic_input_add"
-        app:layout_anchor="@id/content"
-        app:layout_anchorGravity="bottom|end"
-        android:contentDescription="@string/create_a_heatmap" />
+        app:layout_anchor="@id/view_flipper"
+        app:layout_anchorGravity="bottom|end" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
