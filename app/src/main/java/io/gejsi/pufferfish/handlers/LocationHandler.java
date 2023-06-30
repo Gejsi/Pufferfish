@@ -14,7 +14,7 @@ import com.google.android.gms.maps.model.LatLng;
 import io.gejsi.pufferfish.utils.LocationUtils;
 import mil.nga.mgrs.grid.GridType;
 
-public class LocationHandler {
+public abstract class LocationHandler {
   private boolean locationPermissionGranted;
 
   public void setLocationPermissionGranted(boolean locationPermissionGranted) {
@@ -32,6 +32,11 @@ public class LocationHandler {
 
     locationUtils = new LocationUtils(mapsActivity) {
       @Override
+      public void onChangedLocation(Location location) {
+        onLocationChanged(location);
+      }
+
+      @Override
       public void onChangedStatus(String provider, int status, Bundle extras) {
         if (status == LocationProvider.OUT_OF_SERVICE) {
           handleDisabledProvider();
@@ -44,6 +49,8 @@ public class LocationHandler {
       }
     };
   }
+
+  public abstract void onLocationChanged(Location location);
 
   public Location getLastKnownLocation() {
     return locationUtils.getLastKnownLocation();

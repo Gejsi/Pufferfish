@@ -88,6 +88,9 @@ public class ChartUtils {
         ((TextView) activity.findViewById(R.id.averageMeasurementsText)).setText("Number of average measurements: " + averageNum);
         ((TextView) activity.findViewById(R.id.badMeasurementsText)).setText("Number of poor/loud measurements: " + badNum);
         ((TextView) activity.findViewById(R.id.totalMeasurementsText)).setText("Total number of measurements: " + (int) totalMeasurements);
+      } else {
+        intensityChart.setData(null);
+        intensityChart.invalidate();
       }
     });
   }

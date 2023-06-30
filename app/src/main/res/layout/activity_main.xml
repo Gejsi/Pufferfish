@@ -30,7 +30,7 @@
                 android:background="?attr/selectableItemBackground"
                 android:padding="8dp"
                 android:src="@drawable/ic_settings"
-                android:contentDescription="Settings" />
+                android:contentDescription="@string/settings" />
 
             <ImageButton
                 android:id="@+id/me"
@@ -41,7 +41,7 @@
                 android:background="?attr/selectableItemBackground"
                 android:padding="8dp"
                 android:src="@drawable/ic_person"
-                android:contentDescription="My profile" />
+                android:contentDescription="@string/my_profile" />
 
             <ImageButton
                 android:id="@+id/exportButton"
@@ -52,7 +52,7 @@
                 android:background="?attr/selectableItemBackground"
                 android:padding="8dp"
                 android:src="@drawable/ic_export"
-                android:contentDescription="Export" />
+                android:contentDescription="@string/export" />
 
             <ImageButton
                 android:id="@+id/importButton"
@@ -63,7 +63,7 @@
                 android:background="?attr/selectableItemBackground"
                 android:padding="8dp"
                 android:src="@drawable/ic_import"
-                android:contentDescription="Import" />
+                android:contentDescription="@string/import_text" />
         </androidx.appcompat.widget.Toolbar>
 
         <com.google.android.material.tabs.TabLayout
@@ -78,17 +78,17 @@
             <com.google.android.material.tabs.TabItem
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Local" />
+                android:text="@string/tab_local" />
 
             <com.google.android.material.tabs.TabItem
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Online" />
+                android:text="@string/tab_online" />
 
             <com.google.android.material.tabs.TabItem
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Stats" />
+                android:text="@string/tab_stats" />
         </com.google.android.material.tabs.TabLayout>
 
     </com.google.android.material.appbar.AppBarLayout>

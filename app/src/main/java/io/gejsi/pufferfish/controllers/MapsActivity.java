@@ -3,6 +3,7 @@ package io.gejsi.pufferfish.controllers;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
+import android.location.Location;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.Toast;
@@ -77,6 +78,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
           Manifest.permission.ACCESS_FINE_LOCATION,
           Manifest.permission.ACCESS_COARSE_LOCATION,
           Manifest.permission.RECORD_AUDIO,
+          Manifest.permission.ACCESS_WIFI_STATE,
           Manifest.permission.POST_NOTIFICATIONS
   };
 
@@ -91,6 +93,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   private GridUtils gridUtils;
   private Timer backgroundRecordingTimer;
   private NotificationUtils notificationUtils;
+
+  private AtomicBoolean isBackgroundModeEnabled = new AtomicBoolean(false);
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -138,7 +142,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     Button saveBtn = binding.btnSave;
     saveBtn.setOnClickListener(v -> {
-      boolean isSaved = false;
+      boolean isSaved;
 
       if (onlineTimestamp != null) {
         isSaved = HeatmapUtils.updateHeatmap(this, onlineTimestamp, measurements);
@@ -153,6 +157,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     FloatingActionButton locationBtn = binding.myLoc;
     locationBtn.setOnClickListener(__ -> {
+      if (locationHandler.getLastKnownLocation() == null) {
+        Toast.makeText(this, "Unable to retrieve current position. Please, move around.", Toast.LENGTH_SHORT).show();
+      }
+
       locationHandler.getDeviceLocation(gridType);
     });
 
@@ -161,7 +169,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     FloatingActionButton backgroundBtn = binding.background;
     TooltipCompat.setTooltipText(backgroundBtn, "Save measurements in background");
-    AtomicBoolean isBackgroundModeEnabled = new AtomicBoolean(false);
     backgroundBtn.setOnClickListener(view -> {
       if (isBackgroundModeEnabled.get()) {
         enableUIInteraction();
@@ -219,7 +226,22 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   public void onMapReady(@NonNull GoogleMap googleMap) {
     map = googleMap;
     map.getUiSettings().setMyLocationButtonEnabled(false);
-    locationHandler = new LocationHandler(this, map);
+
+    boolean notificationsEnabled = SettingsUtils.getNotificationsPreference(this);
+    locationHandler = new LocationHandler(this, map) {
+      @Override
+      public void onLocationChanged(Location location) {
+        String coordinate = getCurrentCoordinate();
+        if (
+                coordinate != null
+                && !measurements.containsKey(coordinate)
+                && notificationsEnabled
+                && isBackgroundModeEnabled.get()
+        ) {
+          notificationUtils.sendNotification();
+        }
+      }
+    };
 
     if (measurementType == Measurement.Type.Noise) {
       sampler = new AudioHandler(this);
@@ -292,7 +314,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (showRationale) {
           new AlertDialog.Builder(this)
                   .setTitle("Permission Required")
-                  .setMessage("This app requires location, audio, Wi-Fi and LTE permissions to work properly.")
+                  .setMessage("This app requires location, audio and notification permissions to work properly.")
                   .setPositiveButton("OK", (dialog, which) -> requestPermissions())
                   .setNegativeButton("Cancel", (dialog, which) -> finish())
                   .setCancelable(false)
@@ -345,7 +367,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     measurement.setIntensity(sampler.getAverageData());
 
     try {
-      gridUtils.fillTile(this, map, measurement);
+      gridUtils.fillTile(this, map, measurement, isBackgroundModeEnabled.get());
     } catch (ParseException e) {
       throw new RuntimeException(e);
     }
@@ -358,15 +380,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   }
 
   public void startBackgroundRecording() {
-    boolean notificationsEnabled = SettingsUtils.getNotificationsPreference(this);
     TimerTask backgroundRecordingTask = new TimerTask() {
       @Override
       public void run() {
-        // send notifications if a tile hasn't been visited yet
-        if (getCurrentCoordinate() != null && !measurements.containsKey(getCurrentCoordinate()) && notificationsEnabled) {
-          notificationUtils.sendNotification();
-        }
-
         runOnUiThread(() -> recordMeasurement());
       }
     };

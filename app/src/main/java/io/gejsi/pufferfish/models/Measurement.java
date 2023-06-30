@@ -9,7 +9,8 @@ public class Measurement {
   private Type type;
   private Intensity intensity;
 
-  public Measurement() {}
+  public Measurement() {
+  }
 
   public Measurement(String coordinate) {
     this.coordinate = coordinate;
