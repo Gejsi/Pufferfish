@@ -1,11 +1,7 @@
 package io.gejsi.pufferfish.controllers;
 
-import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.graphics.Color;
-import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
@@ -22,7 +18,6 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.core.content.FileProvider;
 
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.components.XAxis;
@@ -37,20 +32,9 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import io.gejsi.pufferfish.R;
 import io.gejsi.pufferfish.databinding.ActivityMainBinding;
@@ -58,6 +42,7 @@ import io.gejsi.pufferfish.models.Heatmap;
 import io.gejsi.pufferfish.models.IntentKey;
 import io.gejsi.pufferfish.models.Measurement;
 import io.gejsi.pufferfish.utils.ChartUtils;
+import io.gejsi.pufferfish.utils.FileUtils;
 import io.gejsi.pufferfish.utils.HeatmapUtils;
 
 public class MainActivity extends AppCompatActivity {
@@ -108,38 +93,12 @@ public class MainActivity extends AppCompatActivity {
 
     ImageButton exportButton = binding.exportButton;
     exportButton.setOnClickListener(view -> {
-      List<String> jsonFiles = Arrays.stream(MainActivity.this.fileList())
-              .filter(fileName -> fileName.startsWith("Heatmap_") && fileName.endsWith(".json"))
-              .collect(Collectors.toList());
-
-      try {
-        File zipFile = HeatmapUtils.createZipFile(MainActivity.this, jsonFiles);
-        Uri fileUri = FileProvider.getUriForFile(MainActivity.this, getPackageName() + ".fileprovider", zipFile);
-
-        Intent intent = new Intent(Intent.ACTION_SEND);
-        intent.setType("application/zip");
-        intent.putExtra(Intent.EXTRA_STREAM, fileUri);
-        intent.putExtra(Intent.EXTRA_SUBJECT, "Database Dump");
-        intent.putExtra(Intent.EXTRA_TEXT, "Pufferfish: attached heatmaps database dump.");
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-        Intent chooser = Intent.createChooser(intent, "Share heatmaps dump.");
-        List<ResolveInfo> resolveInfoList = getPackageManager().queryIntentActivities(chooser, PackageManager.MATCH_DEFAULT_ONLY);
-        for (ResolveInfo resolveInfo : resolveInfoList) {
-          String packageName = resolveInfo.activityInfo.packageName;
-          grantUriPermission(packageName, fileUri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        }
-
-        startActivity(chooser);
-      } catch (IOException e) {
-        e.printStackTrace();
-        Toast.makeText(this, "Error while exporting the database dump.", Toast.LENGTH_SHORT).show();
-      }
+      FileUtils.exportDatabaseDump(MainActivity.this);
     });
 
     importLauncher = registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
       if (uri != null) {
-        importDatabaseDump(uri);
+        FileUtils.importDatabaseDump(MainActivity.this, uri);
       }
     });
 
@@ -177,77 +136,6 @@ public class MainActivity extends AppCompatActivity {
     });
   }
 
-  private void importDatabaseDump(Uri zipUri) {
-    try {
-      // Open an InputStream for the zip file
-      InputStream inputStream = getContentResolver().openInputStream(zipUri);
-      if (inputStream != null) {
-        // Create a temporary directory to extract the files
-        File tempDir = new File(getCacheDir(), "temp");
-        if (!tempDir.exists()) {
-          tempDir.mkdirs();
-        }
-
-        ZipInputStream zipInputStream = new ZipInputStream(inputStream);
-        ZipEntry zipEntry;
-
-        while ((zipEntry = zipInputStream.getNextEntry()) != null) {
-          File jsonFile = new File(tempDir, zipEntry.getName());
-
-          FileOutputStream fileOutputStream = new FileOutputStream(jsonFile);
-          byte[] buffer = new byte[1024];
-          int length;
-          while ((length = zipInputStream.read(buffer)) > 0) {
-            fileOutputStream.write(buffer, 0, length);
-          }
-          fileOutputStream.close();
-
-          processImportedJsonFile(jsonFile);
-        }
-
-        zipInputStream.close();
-        deleteRecursive(tempDir);
-
-        // Show a toast indicating successful import
-        Toast.makeText(this, "Database dump imported successfully", Toast.LENGTH_SHORT).show();
-      }
-    } catch (IOException e) {
-      e.printStackTrace();
-      Toast.makeText(this, "Error importing database dump", Toast.LENGTH_SHORT).show();
-    }
-  }
-
-  // Helper method to recursively delete a directory and its contents
-  private void deleteRecursive(File fileOrDirectory) {
-    if (fileOrDirectory.isDirectory()) {
-      for (File child : Objects.requireNonNull(fileOrDirectory.listFiles())) {
-        deleteRecursive(child);
-      }
-    }
-
-    fileOrDirectory.delete();
-  }
-
-  private void processImportedJsonFile(File jsonFile) {
-    try {
-      // Read the JSON data from the file
-      StringBuilder jsonBuilder = new StringBuilder();
-      BufferedReader reader = new BufferedReader(new FileReader(jsonFile));
-      String line;
-      while ((line = reader.readLine()) != null) {
-        jsonBuilder.append(line);
-      }
-      reader.close();
-
-      String fileName = jsonFile.getName();
-      String fileContent = jsonBuilder.toString();
-      FileOutputStream fileOutputStream = openFileOutput(fileName, Context.MODE_PRIVATE);
-      fileOutputStream.write(fileContent.getBytes());
-      fileOutputStream.close();
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
 
   @Override
   protected void onResume() {
@@ -259,7 +147,7 @@ public class MainActivity extends AppCompatActivity {
   }
 
   private void fillLocalList() {
-    List<String> files = HeatmapUtils.getLocalFiles(this.fileList());
+    List<String> files = FileUtils.getLocalFiles(this.fileList());
     ListView localHeatmaps = findViewById(R.id.localHeatmapsList);
     LocalHeatmapListAdapter localListAdapter = new LocalHeatmapListAdapter(this, files);
     localHeatmaps.setAdapter(localListAdapter);

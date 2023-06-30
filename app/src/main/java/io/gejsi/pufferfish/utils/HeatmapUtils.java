@@ -21,22 +21,16 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import io.gejsi.pufferfish.R;
 import io.gejsi.pufferfish.models.Heatmap;
@@ -161,29 +155,6 @@ public class HeatmapUtils {
     return new Heatmap(timestamp, measurementType, measurements, gridType);
   }
 
-  public static List<String> getLocalFiles(String[] fileList) {
-    return Arrays.stream(fileList)
-            .filter(fileName -> fileName.startsWith("Heatmap_") && fileName.endsWith(".json"))
-            .sorted((fileName1, fileName2) -> {
-              // Split the file names into parts
-              String[] fileParts1 = fileName1.split("_");
-              String[] fileParts2 = fileName2.split("_");
-              String date1 = fileParts1[2];
-              String time1 = fileParts1[3].substring(0, fileParts1[3].length() - 5);
-              String date2 = fileParts2[2];
-              String time2 = fileParts2[3].substring(0, fileParts2[3].length() - 5);
-
-              // compare the date and time values
-              int dateComparison = date2.compareTo(date1);
-              if (dateComparison != 0) {
-                return dateComparison; // sort by date in descending order
-              } else {
-                return time2.compareTo(time1); // sort by time in descending order
-              }
-            })
-            .collect(Collectors.toList());
-  }
-
   public static void syncHeatmap(Activity activity, String fileName) {
     FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
@@ -261,28 +232,4 @@ public class HeatmapUtils {
     return heatmapFuture;
   }
 
-  public static File createZipFile(Activity activity, List<String> jsonFiles) throws IOException {
-    String zipFileName = "heatmaps_dump.zip";
-    File zipFile = new File(activity.getCacheDir(), zipFileName);
-
-    FileOutputStream fileOutputStream = new FileOutputStream(zipFile);
-    ZipOutputStream zipOutputStream = new ZipOutputStream(fileOutputStream);
-
-    byte[] buffer = new byte[1024];
-    int length;
-    for (String jsonFile : jsonFiles) {
-      FileInputStream fileInputStream = activity.openFileInput(jsonFile);
-      ZipEntry zipEntry = new ZipEntry(jsonFile);
-      zipOutputStream.putNextEntry(zipEntry);
-      while ((length = fileInputStream.read(buffer)) > 0) {
-        zipOutputStream.write(buffer, 0, length);
-      }
-      fileInputStream.close();
-    }
-
-    zipOutputStream.close();
-    fileOutputStream.close();
-
-    return zipFile;
-  }
 }
