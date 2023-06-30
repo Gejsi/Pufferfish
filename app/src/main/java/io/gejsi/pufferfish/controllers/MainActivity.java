@@ -1,5 +1,6 @@
 package io.gejsi.pufferfish.controllers;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
@@ -15,6 +16,8 @@ import android.widget.Spinner;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -34,13 +37,20 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import io.gejsi.pufferfish.R;
 import io.gejsi.pufferfish.databinding.ActivityMainBinding;
@@ -51,6 +61,7 @@ import io.gejsi.pufferfish.utils.ChartUtils;
 import io.gejsi.pufferfish.utils.HeatmapUtils;
 
 public class MainActivity extends AppCompatActivity {
+  ActivityResultLauncher<String> importLauncher;
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -95,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
       startActivity(intent);
     });
 
-    ImageButton exportButton = binding.export;
+    ImageButton exportButton = binding.exportButton;
     exportButton.setOnClickListener(view -> {
       List<String> jsonFiles = Arrays.stream(MainActivity.this.fileList())
               .filter(fileName -> fileName.startsWith("Heatmap_") && fileName.endsWith(".json"))
@@ -122,7 +133,19 @@ public class MainActivity extends AppCompatActivity {
         startActivity(chooser);
       } catch (IOException e) {
         e.printStackTrace();
+        Toast.makeText(this, "Error while exporting the database dump.", Toast.LENGTH_SHORT).show();
       }
+    });
+
+    importLauncher = registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
+      if (uri != null) {
+        importDatabaseDump(uri);
+      }
+    });
+
+    ImageButton importButton = binding.importButton;
+    importButton.setOnClickListener(view -> {
+      importLauncher.launch("application/zip");
     });
 
     TabLayout tabs = binding.tabLayout;
@@ -152,7 +175,78 @@ public class MainActivity extends AppCompatActivity {
       public void onTabReselected(TabLayout.Tab tab) {
       }
     });
+  }
 
+  private void importDatabaseDump(Uri zipUri) {
+    try {
+      // Open an InputStream for the zip file
+      InputStream inputStream = getContentResolver().openInputStream(zipUri);
+      if (inputStream != null) {
+        // Create a temporary directory to extract the files
+        File tempDir = new File(getCacheDir(), "temp");
+        if (!tempDir.exists()) {
+          tempDir.mkdirs();
+        }
+
+        ZipInputStream zipInputStream = new ZipInputStream(inputStream);
+        ZipEntry zipEntry;
+
+        while ((zipEntry = zipInputStream.getNextEntry()) != null) {
+          File jsonFile = new File(tempDir, zipEntry.getName());
+
+          FileOutputStream fileOutputStream = new FileOutputStream(jsonFile);
+          byte[] buffer = new byte[1024];
+          int length;
+          while ((length = zipInputStream.read(buffer)) > 0) {
+            fileOutputStream.write(buffer, 0, length);
+          }
+          fileOutputStream.close();
+
+          processImportedJsonFile(jsonFile);
+        }
+
+        zipInputStream.close();
+        deleteRecursive(tempDir);
+
+        // Show a toast indicating successful import
+        Toast.makeText(this, "Database dump imported successfully", Toast.LENGTH_SHORT).show();
+      }
+    } catch (IOException e) {
+      e.printStackTrace();
+      Toast.makeText(this, "Error importing database dump", Toast.LENGTH_SHORT).show();
+    }
+  }
+
+  // Helper method to recursively delete a directory and its contents
+  private void deleteRecursive(File fileOrDirectory) {
+    if (fileOrDirectory.isDirectory()) {
+      for (File child : Objects.requireNonNull(fileOrDirectory.listFiles())) {
+        deleteRecursive(child);
+      }
+    }
+
+    fileOrDirectory.delete();
+  }
+
+  private void processImportedJsonFile(File jsonFile) {
+    try {
+      // Read the JSON data from the file
+      StringBuilder jsonBuilder = new StringBuilder();
+      BufferedReader reader = new BufferedReader(new FileReader(jsonFile));
+      String line;
+      while ((line = reader.readLine()) != null) {
+        jsonBuilder.append(line);
+      }
+      reader.close();
+
+      String fileName = jsonFile.getName();
+      String fileContent = jsonBuilder.toString();
+      FileOutputStream fileOutputStream = openFileOutput(fileName, Context.MODE_PRIVATE);
+      fileOutputStream.write(fileContent.getBytes());
+      fileOutputStream.close();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 
   @Override

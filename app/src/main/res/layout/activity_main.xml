@@ -42,7 +42,7 @@
                 android:src="@drawable/ic_person" />
 
             <ImageButton
-                android:id="@+id/export"
+                android:id="@+id/exportButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="end"
@@ -50,6 +50,16 @@
                 android:background="?attr/selectableItemBackground"
                 android:padding="8dp"
                 android:src="@drawable/ic_location" />
+
+            <ImageButton
+                android:id="@+id/importButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginEnd="8dp"
+                android:background="?attr/selectableItemBackground"
+                android:padding="8dp"
+                android:src="@drawable/ic_record" />
         </androidx.appcompat.widget.Toolbar>
 
         <com.google.android.material.tabs.TabLayout
