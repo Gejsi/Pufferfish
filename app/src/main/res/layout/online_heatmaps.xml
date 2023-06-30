@@ -4,24 +4,26 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context=".controllers.MainActivity"
-    tools:showIn="@layout/activity_main"
-    android:orientation="vertical">
+    tools:showIn="@layout/activity_main">
 
     <TextView
         android:id="@+id/not_logged"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="16dp"
-        android:text="Only logged users can access their online heatmaps." />
+        android:text="Only logged users can access their online heatmaps."
+        android:textSize="20sp" />
 
     <TextView
         android:id="@+id/online_desc"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="16dp"
-        android:text="Your online synced heatmaps." />
+        android:text="Your online synced heatmaps."
+        android:textSize="20sp" />
 
     <ListView
         android:id="@+id/onlineHeatmapsList"
