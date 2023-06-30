@@ -29,7 +29,8 @@
                 android:layout_marginEnd="8dp"
                 android:background="?attr/selectableItemBackground"
                 android:padding="8dp"
-                android:src="@drawable/ic_settings" />
+                android:src="@drawable/ic_settings"
+                android:contentDescription="Settings" />
 
             <ImageButton
                 android:id="@+id/me"
@@ -39,7 +40,8 @@
                 android:layout_marginEnd="8dp"
                 android:background="?attr/selectableItemBackground"
                 android:padding="8dp"
-                android:src="@drawable/ic_person" />
+                android:src="@drawable/ic_person"
+                android:contentDescription="My profile" />
 
             <ImageButton
                 android:id="@+id/exportButton"
@@ -49,7 +51,8 @@
                 android:layout_marginEnd="8dp"
                 android:background="?attr/selectableItemBackground"
                 android:padding="8dp"
-                android:src="@drawable/ic_location" />
+                android:src="@drawable/ic_export"
+                android:contentDescription="Export" />
 
             <ImageButton
                 android:id="@+id/importButton"
@@ -59,7 +62,8 @@
                 android:layout_marginEnd="8dp"
                 android:background="?attr/selectableItemBackground"
                 android:padding="8dp"
-                android:src="@drawable/ic_record" />
+                android:src="@drawable/ic_import"
+                android:contentDescription="Import" />
         </androidx.appcompat.widget.Toolbar>
 
         <com.google.android.material.tabs.TabLayout

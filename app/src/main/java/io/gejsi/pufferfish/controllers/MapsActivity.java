@@ -151,6 +151,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
       }
     });
 
+    FloatingActionButton locationBtn = binding.myLoc;
+    locationBtn.setOnClickListener(__ -> {
+      locationHandler.getDeviceLocation(gridType);
+    });
+
     gridUtils = new GridUtils();
     notificationUtils = new NotificationUtils(this);
 
@@ -180,6 +185,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
       mapFragment.getMapAsync(this);
     }
 
+    // Create the grid
     Grids grids = Grids.create();
     grids.setColor(GridType.TEN_METER, Color.blue());
     tileProvider = MGRSTileProvider.create(this, grids);
@@ -212,6 +218,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   @Override
   public void onMapReady(@NonNull GoogleMap googleMap) {
     map = googleMap;
+    map.getUiSettings().setMyLocationButtonEnabled(false);
     locationHandler = new LocationHandler(this, map);
 
     if (measurementType == Measurement.Type.Noise) {
@@ -301,7 +308,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
   private void startHandlers() {
     locationHandler.setLocationPermissionGranted(true);
-    locationHandler.start();
+    locationHandler.start(gridType);
     sampler.start();
   }
 

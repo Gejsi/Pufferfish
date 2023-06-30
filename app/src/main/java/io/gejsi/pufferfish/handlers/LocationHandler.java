@@ -12,10 +12,9 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
 
 import io.gejsi.pufferfish.utils.LocationUtils;
+import mil.nga.mgrs.grid.GridType;
 
 public class LocationHandler {
-  private static final int DEFAULT_ZOOM = 20;
-
   private boolean locationPermissionGranted;
 
   public void setLocationPermissionGranted(boolean locationPermissionGranted) {
@@ -57,18 +56,27 @@ public class LocationHandler {
   /**
    * Gets the current location of the device, and positions the map's camera.
    */
-  public void getDeviceLocation() {
+  public void getDeviceLocation(GridType gridType) {
     updateLocationUI();
 
     Location lastKnownLocation = locationUtils.getLastKnownLocation();
+    int zoom = 0;
+
+    if (gridType == GridType.METER)
+      zoom = 22;
+    else if (gridType == GridType.HUNDRED_METER)
+      zoom = 18;
+    else
+      zoom = 20;
+
 
     if (locationPermissionGranted && lastKnownLocation != null) {
-      map.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude()), DEFAULT_ZOOM));
+      map.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude()), zoom));
     }
   }
 
-  public void start() {
-    getDeviceLocation();
+  public void start(GridType gridType) {
+    getDeviceLocation(gridType);
     locationUtils.startLocationUpdates();
   }
 
