@@ -128,6 +128,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
       gridType = SettingsUtils.getGridPreference(this);
     }
 
+    String tileSize = gridType == GridType.METER
+            ? "1 meter"
+            : gridType == GridType.HUNDRED_METER
+              ? "100 meters"
+              : "10 meters";
+
+    Toast.makeText(this, "Recording tiles of " + tileSize, Toast.LENGTH_SHORT).show();
+
     // Retrieve the selected measurement type from intent extras
     if (getIntent().hasExtra(IntentKey.MeasurementType.toString())) {
       String selectedMeasurementType = getIntent().getStringExtra(IntentKey.MeasurementType.toString());
