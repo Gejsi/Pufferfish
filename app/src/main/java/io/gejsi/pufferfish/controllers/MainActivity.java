@@ -163,8 +163,8 @@ public class MainActivity extends AppCompatActivity {
       String fileName = files.get(position);
 
       AlertDialog.Builder builder = new AlertDialog.Builder(parent.getContext());
-      builder.setTitle("Actions")
-              .setMessage("What do you will you do with this heatmap?")
+      builder.setTitle("Local heatmap")
+              .setMessage("What will you do with this heatmap?")
               .setPositiveButton("Open", (dialog, which) -> {
                 Intent intent = new Intent(MainActivity.this, MapsActivity.class);
                 intent.putExtra(IntentKey.MeasurementType.toString(), fileName.split("_")[1]);
@@ -234,8 +234,8 @@ public class MainActivity extends AppCompatActivity {
       Heatmap heatmap = heatmapList.get(position);
 
       AlertDialog.Builder builder = new AlertDialog.Builder(parent.getContext());
-      builder.setTitle("Actions")
-              .setMessage("What do you will you do with this heatmap?")
+      builder.setTitle("Online heatmap")
+              .setMessage("What will you do with this heatmap?")
               .setPositiveButton("Open", (dialog, which) -> {
                 Intent intent = new Intent(MainActivity.this, MapsActivity.class);
                 intent.putExtra(IntentKey.MeasurementType.toString(), heatmap.getMeasurementType().toString());
